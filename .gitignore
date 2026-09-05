@@ -1,0 +1,34 @@
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+*.pyc
+
+# Database (local dynamic SQLite database)
+*.db
+*.sqlite3
+database/*.db
+
+# PyInstaller / Executable builds
+build/
+dist/
+*.spec
+
+# Scratch space, logs & credentials
+scratch/
+*.log
+*.tmp
+.env
+.env.*
+
+# IDEs & System files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+

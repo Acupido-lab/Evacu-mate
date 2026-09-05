@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EvacuMate - Online & Offline Access Guide</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --success: #16a34a;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card);
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01);
+            border: 1px solid var(--border);
+        }
+        h1 {
+            color: var(--primary);
+            font-size: 2rem;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        h2 {
+            font-size: 1.35rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.4rem;
+            margin-top: 2rem;
+            color: #1e293b;
+        }
+        .badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: var(--primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .card-box {
+            background: #f1f5f9;
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.25rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+        }
+        code {
+            background: #e2e8f0;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: Consolas, monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        pre code {
+            background: transparent;
+            color: inherit;
+        }
+        .btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.2s;
+            margin-top: 1rem;
+        }
+        .btn:hover {
+            background: var(--primary-hover);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>EvacuMate Access Guide</h1>
+        <p class="badge">Relief & Shelter Helper</p>
+        <p>This guide explains how to access and run <strong>EvacuMate</strong> in both <strong>Offline</strong> and <strong>Online</strong> environments.</p>
+
+        <h2>1. 📴 Offline Access (No Internet Required)</h2>
+        <h3>Mode A: Local Computer (Single User / Admin)</h3>
+        <p>1. Double-click the <strong>EvacuMate App</strong> shortcut on your Desktop.</p>
+        <p>2. The application will start and open automatically at: <br>
+           <code>http://127.0.0.1:8550</code> or <code>http://localhost:8550</code></p>
+        <a href="http://127.0.0.1:8550" class="btn" target="_blank">Open EvacuMate Local Server</a>
+
+        <h3>Mode B: Local Wi-Fi / LAN Network (Shelter / Multi-Device)</h3>
+        <p>Connect multiple phones, tablets, or laptops in your shelter or office without internet!</p>
+        <div class="card-box">
+            <strong>How to connect other devices on the same Wi-Fi:</strong>
+            <ol>
+                <li>Start EvacuMate on your host computer.</li>
+                <li>Note your Network IP shown in the terminal (e.g., <code>http://192.168.1.15:8550</code>).</li>
+                <li>On any phone or laptop on the same Wi-Fi, open the browser and navigate to <code>http://&lt;YOUR-LOCAL-IP&gt;:8550</code>.</li>
+            </ol>
+        </div>
+
+        <h2>2. 🌐 Online Access (Public Internet Access)</h2>
+        <h3>Free 24/7 Cloud Hosting on Render.com</h3>
+        <p>Deploy your system online so anyone can access it globally:</p>
+        <ol>
+            <li>Push this workspace folder to a <strong>GitHub Repository</strong>.</li>
+            <li>Log into <a href="https://render.com" target="_blank">Render.com</a> and click <strong>New Web Service</strong>.</li>
+            <li>Connect your GitHub repository. (Render uses <code>render.yaml</code> & <code>Procfile</code> automatically).</li>
+            <li>Get your permanent live URL (e.g., <code>https://evacumate.onrender.com</code>).</li>
+        </ol>
+
+        <h2>3. 💾 Data & Backup</h2>
+        <p>All records (evacuees, families, supplies) are stored in <code>database/evacumate.db</code> locally on your hard drive, ensuring complete data security and offline survival.</p>
+    </div>
+</body>
+</html>

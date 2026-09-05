@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EvacuMate - Relief & Shelter Helper</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons (Local Offline Support) -->
+    <script src="/static/lucide.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" type="image/png" href="/static/app_icon.png">
+</head>
+<body>
+    <!-- Background Decorator Elements -->
+    <div class="bg-glow-sphere glow-1"></div>
+    <div class="bg-glow-sphere glow-2"></div>
+
+    <!-- Login / Registration Container -->
+    <div id="login-container" class="auth-wrapper">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="brand-icon-wrapper">
+                    <div class="brand-icon">
+                        <i data-lucide="heart-handshake"></i>
+                    </div>
+                </div>
+                <h1>EvacuMate</h1>
+                <p class="auth-subtitle">Relief & Shelter Operations Manager</p>
+                <div class="offline-mode-chip">
+                    <i data-lucide="wifi-off"></i> Offline & Local Network Ready
+                </div>
+            </div>
+            
+            <div class="auth-tabs">
+                <button id="tab-login" class="auth-tab active" onclick="switchAuthTab('login')">
+                    <i data-lucide="log-in"></i> Log In
+                </button>
+                <button id="tab-register" class="auth-tab" onclick="switchAuthTab('register')">
+                    <i data-lucide="user-plus"></i> Register
+                </button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="login-username"><i data-lucide="user"></i> Username</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="user" class="input-icon"></i>
+                        <input type="text" id="login-username" placeholder="Enter your username" required autocomplete="username">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="login-password"><i data-lucide="lock"></i> Password</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="lock" class="input-icon"></i>
+                        <input type="password" id="login-password" placeholder="Enter your password" required autocomplete="current-password">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block btn-lg">
+                    <i data-lucide="log-in"></i> Sign In to EvacuMate
+                </button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" class="auth-form hidden" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="reg-username"><i data-lucide="user-plus"></i> Create Username</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="user" class="input-icon"></i>
+                        <input type="text" id="reg-username" placeholder="Choose a username" required autocomplete="new-username">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="reg-password"><i data-lucide="lock"></i> Create Password</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="lock" class="input-icon"></i>
+                        <input type="password" id="reg-password" placeholder="Choose a password" required autocomplete="new-password">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="reg-role"><i data-lucide="shield"></i> Role Selection</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="shield" class="input-icon"></i>
+                        <select id="reg-role" required>
+                            <option value="Staff">Staff (Standard Access)</option>
+                            <option value="Admin">Admin (Full Control)</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block btn-lg">
+                    <i data-lucide="user-check"></i> Create Account
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App Container (Hidden by default until logged in) -->
+    <div id="app-container" class="app-layout hidden">
+        <!-- Sidebar Navigation -->
+        <aside class="app-sidebar" id="app-sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-logo-pod">
+                    <i data-lucide="heart-handshake" class="brand-icon-logo"></i>
+                </div>
+                <div class="brand-text">
+                    <h2>EvacuMate</h2>
+                    <span>Relief & Shelter Helper</span>
+                </div>
+                <button class="btn-close-sidebar" onclick="toggleSidebar(false)" aria-label="Close Sidebar">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-view="dashboard" onclick="navigateTo('dashboard', event)">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-view="families" onclick="navigateTo('families', event)">
+                    <i data-lucide="users"></i>
+                    <span>Families & Evacuees</span>
+                </a>
+                <a href="#" class="nav-item" data-view="rooms" onclick="navigateTo('rooms', event)">
+                    <i data-lucide="door-open"></i>
+                    <span>Room Management</span>
+                </a>
+                <a href="#" class="nav-item" data-view="inventory" onclick="navigateTo('inventory', event)">
+                    <i data-lucide="archive"></i>
+                    <span>Inventory</span>
+                </a>
+                <a href="#" class="nav-item" data-view="distribution" onclick="navigateTo('distribution', event)">
+                    <i data-lucide="truck"></i>
+                    <span>Distributions</span>
+                </a>
+                <a href="#" class="nav-item admin-only hidden" data-view="users" id="nav-users" onclick="navigateTo('users', event)">
+                    <i data-lucide="shield-alert"></i>
+                    <span>User Accounts</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-profile-card">
+                    <div class="avatar" id="user-avatar">A</div>
+                    <div class="profile-details">
+                        <div class="username" id="display-username">Administrator</div>
+                        <div class="role-badge" id="display-role">Admin</div>
+                    </div>
+                </div>
+                <div class="footer-actions">
+                    <button class="btn-icon" title="Logout" onclick="handleLogout()">
+                        <i data-lucide="log-out"></i>
+                        <span>Logout</span>
+                    </button>
+                    <button class="btn-icon text-danger" title="Shut Down Server" onclick="triggerShutdown()">
+                        <i data-lucide="power"></i>
+                        <span>Shutdown</span>
+                    </button>
+                </div>
+                <div class="web-access-ip" id="web-access-ip"><i data-lucide="wifi"></i> Web Access: Loading...</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <!-- App Header -->
+            <header class="app-header">
+                <div class="header-left">
+                    <button class="btn-menu" onclick="toggleSidebar(true)" aria-label="Toggle Navigation Menu">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <div class="page-title-group">
+                        <h1 id="page-title">Dashboard Overview</h1>
+                        <span class="header-subtitle">Real-time Relief Monitoring</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="header-chip date-display">
+                        <i data-lucide="calendar"></i>
+                        <span id="display-date">Loading date...</span>
+                    </div>
+                    <div class="header-divider"></div>
+                    <button class="btn-icon-theme" onclick="toggleTheme()" title="Toggle Light/Dark Theme">
+                        <i data-lucide="moon" id="theme-icon"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dynamic View Wrapper -->
+            <div class="view-content" id="view-content">
+                <!-- Content injected dynamically via JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Alert / Toast Notification -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Global Confirmation Modal -->
+    <div id="confirm-modal" class="modal-overlay hidden">
+        <div class="modal-card confirm-card">
+            <div class="confirm-icon-pod">
+                <i data-lucide="alert-circle"></i>
+            </div>
+            <h3 id="confirm-title">Confirm Action</h3>
+            <p id="confirm-text">Are you sure you want to perform this operation?</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+                <button class="btn btn-danger" id="confirm-submit-btn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Edit Dialogs -->
+    <div id="edit-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="edit-modal-title">Edit Details</h3>
+                <button class="btn-close-modal" onclick="closeEditModal()" aria-label="Close modal">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="edit-modal-body">
+                <!-- Form fields injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
+
