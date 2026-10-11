@@ -476,34 +476,79 @@ def delete_user(user_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+def ensure_gateway_tunnel_active():
+    """Starts the permanent ngrok tunnel in the background if configured and not already running."""
+    config_path = os.path.join(bundle_dir, 'gateway_config.json')
+    if not os.path.exists(config_path):
+        return
+    try:
+        import json
+        with open(config_path, 'r', encoding='utf-8') as f:
+            cfg = json.load(f)
+        domain = cfg.get('permanent_domain', '').strip()
+        token = cfg.get('authtoken', '').strip()
+        if not domain or 'YOUR_' in domain.upper() or not token:
+            return
+
+        ngrok_bin = os.path.join(bundle_dir, 'bin', 'ngrok.exe')
+        if not os.path.isfile(ngrok_bin):
+            return
+
+        # Check if ngrok is already running
+        import subprocess
+        res = subprocess.run(["tasklist", "/FI", "IMAGENAME eq ngrok.exe"], capture_output=True, text=True)
+        if "ngrok.exe" in res.stdout:
+            return  # ngrok is already active
+
+        cmd = [
+            ngrok_bin,
+            "http",
+            f"--url=https://{domain}",
+            "--host-header=rewrite",
+            "127.0.0.1:8550"
+        ]
+        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        pass
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8550))
     debug = os.environ.get('FLASK_DEBUG', 'False').lower() in ('true', '1', 't')
     
+    # Ensure permanent public gateway tunnel is active
+    ensure_gateway_tunnel_active()
+
     local_ip = get_local_ip()
+    pub_url = get_public_gateway_url()
+
     print("=" * 66)
-    print("    EvacuMate Relief & Shelter Helper (Offline & Local Server)    ")
+    print("    EvacuMate Relief & Shelter Helper (Permanent Public Online)    ")
     print("=" * 66)
-    print(f"  PERMANENT OFFLINE LINK (All Devices) : http://evacumate.local:{port}")
-    print(f"  Direct Wi-Fi / Hotspot Fallback      : http://{local_ip}:{port}")
-    print(f"  Local Host Computer                  : http://127.0.0.1:{port}")
-    if port == 8550:
-        print(f"  Standard Browser Link (Port 80)      : http://evacumate.local")
+    if pub_url:
+        print(f"  PERMANENT PUBLIC ONLINE URL (Any Device) : {pub_url}")
+    print(f"  Offline Local Link (All Devices)         : http://evacumate.local:{port}")
+    print(f"  Direct Wi-Fi / Hotspot Fallback          : http://{local_ip}:{port}")
+    print(f"  Local Host Computer                      : http://127.0.0.1:{port}")
     print("=" * 66)
     
-    # Auto-open browser window on startup (for local / EXE execution)
+    # Auto-open browser window on startup directly to permanent public link!
     if os.environ.get('PORT') is None and os.environ.get('NO_BROWSER') is None:
         import webbrowser
         import threading
         import time
         def open_browser():
-            time.sleep(1.2)
+            time.sleep(1.5)
+            target_url = pub_url if pub_url else f"http://127.0.0.1:{port}"
             try:
-                webbrowser.open(f"http://127.0.0.1:{port}")
+                webbrowser.open(target_url)
             except Exception:
                 pass
 
         threading.Thread(target=open_browser, daemon=True).start()
 
-    # Run the web server
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    # Run the web server (Prefer multithreaded Waitress for seamless public gateway handling)
+    try:
+        from waitress import serve
+        serve(app, host='0.0.0.0', port=port, threads=8)
+    except Exception:
+        app.run(host='0.0.0.0', port=port, debug=debug, threaded=True)

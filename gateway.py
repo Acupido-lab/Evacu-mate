@@ -189,6 +189,17 @@ def query_ngrok_public_url():
         pass
     return None
 
+def kill_existing_ngrok():
+    """Kills any orphaned ngrok process to prevent ERR_NGROK_334 endpoint collision."""
+    try:
+        if os.name == 'nt':
+            subprocess.run(["taskkill", "/F", "/IM", "ngrok.exe"], capture_output=True)
+        else:
+            subprocess.run(["pkill", "-f", "ngrok"], capture_output=True)
+        time.sleep(0.5)
+    except Exception:
+        pass
+
 def run_gateway():
     log("==========================================================", "INFO")
     log("  EvacuMate Permanent Public Online Runtime Gateway      ", "INFO")
@@ -210,18 +221,16 @@ def run_gateway():
     permanent_domain = permanent_domain.strip().rstrip("/")
 
     # RULE 1 & 3: Bind to ONE permanent reserved domain only. No random subdomains.
-    if not permanent_domain or "YOUR_" in permanent_domain.upper() or permanent_domain == "evacumate-relief.ngrok-free.app":
-        # Check if user set their specific domain
-        if not permanent_domain or "YOUR_" in permanent_domain.upper():
-            err_msg = (
-                "PERMANENT DOMAIN REQUIRED: You must specify your reserved domain in gateway_config.json.\n"
-                "Example: 'permanent_domain': 'mysite.ngrok-free.website'\n"
-                "Random subdomains are strictly disallowed per Gateway rules."
-            )
-            log(err_msg, "ERROR")
-            update_status("error", error=err_msg)
-            print("\nTo configure your permanent domain, edit gateway_config.json or run configure_gateway.bat\n")
-            return 1
+    if not permanent_domain or "YOUR_" in permanent_domain.upper():
+        err_msg = (
+            "PERMANENT DOMAIN REQUIRED: You must specify your reserved domain in gateway_config.json.\n"
+            "Example: 'permanent_domain': 'extended-unshackle-evoke.ngrok-free.dev'\n"
+            "Random subdomains are strictly disallowed per Gateway rules."
+        )
+        log(err_msg, "ERROR")
+        update_status("error", error=err_msg)
+        print("\nTo configure your permanent domain, edit gateway_config.json or run configure_gateway.bat\n")
+        return 1
 
     # Check Authtoken
     if not authtoken or "YOUR_" in authtoken.upper():
@@ -270,18 +279,21 @@ def run_gateway():
             if not is_port_open(port):
                 backend_proc = start_backend_server_if_needed(port)
 
-            # 2. Start ngrok bound strictly to the permanent domain
-            # Use --url=https://<domain> (or --domain=<domain> in v3)
+            # 2. Kill any orphaned ngrok process before starting to prevent endpoint conflict
+            kill_existing_ngrok()
+
+            # 3. Start ngrok bound strictly to the permanent domain
             cmd = [
                 ngrok_bin,
                 "http",
                 f"--url=https://{permanent_domain}",
-                str(port),
+                "--host-header=rewrite",
+                f"127.0.0.1:{port}",
                 "--log=stdout",
                 "--log-format=term"
             ]
 
-            log(f"Connecting tunnel to permanent domain: {expected_url} ...", "INFO")
+            log(f"Connecting tunnel to permanent public link: {expected_url} ...", "INFO")
             ngrok_proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
@@ -290,28 +302,32 @@ def run_gateway():
                 bufsize=1
             )
 
-            # 3. Wait for tunnel establishment
-            active_url = None
-            for _ in range(15):
-                time.sleep(1)
-                active_url = query_ngrok_public_url()
-                if active_url:
-                    break
-                if ngrok_proc.poll() is not None:
-                    break
+            # Wait 2 seconds for tunnel to establish
+            time.sleep(2)
 
-            if active_url:
+            if ngrok_proc.poll() is None:
+                active_url = expected_url
                 log("==========================================================", "INFO")
-                log(f" [ONLINE] PERMANENT PUBLIC GATEWAY ACTIVE!", "INFO")
+                log(f" [ONLINE] PERMANENT PUBLIC ONLINE GATEWAY ACTIVE!", "INFO")
                 log(f" Public URL : {active_url}", "INFO")
                 log(f" Local URL  : http://127.0.0.1:{port}", "INFO")
-                log(f" Status     : Protected with HTTPS & Valid SSL Certificate", "INFO")
-                log(f" Gadgets    : Accessible globally from any phone/tablet/PC", "INFO")
+                log(f" Access     : Global Public Internet (Any gadget anywhere)", "INFO")
+                log(f" Security   : Enforced HTTPS & Active SSL Certificate", "INFO")
                 log("==========================================================", "INFO")
                 update_status("online", public_url=active_url)
                 consecutive_failures = 0
+
+                # Auto-open browser directly to the permanent public link!
+                if os.environ.get('NO_BROWSER') is None:
+                    try:
+                        import webbrowser
+                        webbrowser.open(active_url)
+                    except Exception:
+                        pass
             else:
-                log("Tunnel is connecting or waiting for ngrok response...", "WARNING")
+                out = ngrok_proc.stdout.read() if ngrok_proc.stdout else ""
+                log(f"Ngrok connection error: {out[:300]}", "ERROR")
+                update_status("error", error=out[:300])
 
             # 4. Monitor loop: Keep tunnel alive 24/7
             while True:

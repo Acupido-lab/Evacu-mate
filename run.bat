@@ -20,20 +20,24 @@ if not exist .venv (
 echo Installing / verifying dependencies...
 "%UV_EXE%" pip install -r requirements.txt
 echo.
-echo Starting EvacuMate server on http://127.0.0.1:8550 ...
-"%UV_EXE%" run main.py
+echo Starting EvacuMate Permanent Public Online Runtime Gateway...
+echo Public URL: https://extended-unshackle-evoke.ngrok-free.dev
+"%UV_EXE%" run gateway.py
 goto END
 
 :USE_PYTHON
-echo Checking virtual environment...
-if not exist .venv (
-    python -m venv .venv
+if exist .venv\Scripts\activate.bat (
+    call .venv\Scripts\activate.bat 2>nul
 )
-call .venv\Scripts\activate.bat
-pip install -r requirements.txt
+python -c "import flask" 2>nul
+if errorlevel 1 (
+    echo Installing / verifying dependencies...
+    python -m pip install -r requirements.txt
+)
 echo.
-echo Starting EvacuMate server on http://127.0.0.1:8550 ...
-python main.py
+echo Starting EvacuMate Permanent Public Online Runtime Gateway...
+echo Public URL: https://extended-unshackle-evoke.ngrok-free.dev
+python gateway.py
 goto END
 
 :END

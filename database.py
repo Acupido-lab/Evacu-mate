@@ -384,7 +384,9 @@ def delete_room(room_id):
     conn.execute("UPDATE evacuees SET room_id = NULL WHERE room_id = ?", (room_id,))
     conn.execute("DELETE FROM rooms WHERE room_id = ?", (room_id,))
     conn.commit()
-    conn.close()# ==========================================
+    conn.close()
+
+# ==========================================
 # CRUD HELPERS FOR INVENTORY
 # ==========================================
 
@@ -433,7 +435,7 @@ def get_recent_evacuees(limit=5):
         SELECT e.fullname, e.age, e.gender, r.room_name 
         FROM evacuees e 
         LEFT JOIN rooms r ON e.room_id = r.room_id 
-        ORDER BY e.evacuee_id DESC LIMIT {limit}
+        ORDER BY e.evacuee_id DESC LIMIT {int(limit)}
     """).fetchall()
     conn.close()
     return evacuees
@@ -445,7 +447,7 @@ def get_recent_distributions(limit=5):
         FROM distribution d
         JOIN families f ON d.family_id = f.family_id
         JOIN inventory i ON d.item_id = i.item_id
-        ORDER BY d.distribution_id DESC LIMIT {limit}
+        ORDER BY d.distribution_id DESC LIMIT {int(limit)}
     """).fetchall()
     conn.close()
     return dists
@@ -474,6 +476,12 @@ def get_distributions(search=""):
 
 def add_distribution(family_id, item_id, quantity, date):
     conn = get_db_connection()
+    # Check if family exists
+    fam = conn.execute("SELECT family_id FROM families WHERE family_id = ?", (family_id,)).fetchone()
+    if not fam:
+        conn.close()
+        return False
+
     # Check if stock is sufficient
     item = conn.execute("SELECT quantity FROM inventory WHERE item_id = ?", (item_id,)).fetchone()
     if not item or item["quantity"] < int(quantity):
