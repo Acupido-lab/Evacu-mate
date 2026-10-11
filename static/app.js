@@ -107,12 +107,21 @@ function openOfflineQrModal() {
     const modal = document.getElementById('offline-qr-modal');
     if (modal) modal.classList.remove('hidden');
     if (currentServerData) {
+        const publicEl = document.getElementById('qr-public-url');
         const permEl = document.getElementById('qr-permanent-url');
         const ipEl = document.getElementById('qr-ip-url');
+        if (publicEl) {
+            publicEl.textContent = currentServerData.public_url || (currentServerData.offline_permanent_url || 'http://evacumate.local:8550');
+        }
         if (permEl) permEl.textContent = currentServerData.offline_permanent_url || 'http://evacumate.local:8550';
         if (ipEl) ipEl.textContent = currentServerData.network_ip_url || `http://${currentServerData.ip}:8550`;
     }
-    switchQrCode('mdns');
+    // Default to public internet link if available, otherwise offline link
+    if (currentServerData && currentServerData.public_url) {
+        switchQrCode('public');
+    } else {
+        switchQrCode('mdns');
+    }
     if (window.lucide) lucide.createIcons();
 }
 
@@ -122,18 +131,29 @@ function closeOfflineQrModal() {
 }
 
 function switchQrCode(type) {
+    const btnPublic = document.getElementById('btn-qr-public');
     const btnMdns = document.getElementById('btn-qr-mdns');
     const btnIp = document.getElementById('btn-qr-ip');
     const img = document.getElementById('qr-code-img');
+    const boxPublic = document.getElementById('box-qr-public');
+    const boxMdns = document.getElementById('box-qr-mdns');
+    const boxIp = document.getElementById('box-qr-ip');
     if (!img) return;
 
-    if (type === 'ip') {
+    [btnPublic, btnMdns, btnIp].forEach(b => b && b.classList.remove('active'));
+    [boxPublic, boxMdns, boxIp].forEach(b => b && b.classList.add('hidden'));
+
+    if (type === 'public') {
+        if (btnPublic) btnPublic.classList.add('active');
+        if (boxPublic) boxPublic.classList.remove('hidden');
+        img.src = '/api/qr-code?target=public&t=' + Date.now();
+    } else if (type === 'ip') {
         if (btnIp) btnIp.classList.add('active');
-        if (btnMdns) btnMdns.classList.remove('active');
+        if (boxIp) boxIp.classList.remove('hidden');
         img.src = '/api/qr-code?target=ip&t=' + Date.now();
     } else {
         if (btnMdns) btnMdns.classList.add('active');
-        if (btnIp) btnIp.classList.remove('active');
+        if (boxMdns) boxMdns.classList.remove('hidden');
         img.src = '/api/qr-code?target=mdns&t=' + Date.now();
     }
 }

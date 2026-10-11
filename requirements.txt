@@ -3,3 +3,4 @@ gunicorn>=21.2.0; sys_platform != "win32"
 waitress>=3.0.0
 pyinstaller>=6.0.0
 zeroconf>=0.140.0
+qrcode>=7.4.2

@@ -2,9 +2,12 @@
 title EvacuMate Relief ^& Shelter Helper
 cd /d "%~dp0"
 
-echo ===================================================
-echo     EvacuMate - Relief ^& Shelter Helper Server
-echo ===================================================
+echo ======================================================================
+echo           EvacuMate - Relief ^& Shelter Helper Online Gateway          
+echo ======================================================================
+echo.
+echo Starting EvacuMate Public Online Gateway...
+echo Generating secure public link for different Wi-Fi and mobile networks...
 echo.
 
 set "UV_EXE=%USERPROFILE%\.local\bin\uv.exe"
@@ -20,8 +23,6 @@ if not exist .venv (
 echo Installing / verifying dependencies...
 "%UV_EXE%" pip install -r requirements.txt
 echo.
-echo Starting EvacuMate Permanent Public Online Runtime Gateway...
-echo Public URL: https://extended-unshackle-evoke.ngrok-free.dev
 "%UV_EXE%" run gateway.py
 goto END
 
@@ -35,8 +36,6 @@ if errorlevel 1 (
     python -m pip install -r requirements.txt
 )
 echo.
-echo Starting EvacuMate Permanent Public Online Runtime Gateway...
-echo Public URL: https://extended-unshackle-evoke.ngrok-free.dev
 python gateway.py
 goto END
 

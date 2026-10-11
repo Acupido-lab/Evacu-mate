@@ -191,7 +191,7 @@
                     </div>
                 </div>
                 <div class="header-right">
-                    <button class="btn-connect-mobile" onclick="openOfflineQrModal()" title="Connect Mobile Phones & Tablets (Offline)">
+                    <button class="btn-connect-mobile" onclick="openOfflineQrModal()" title="Connect Mobile Phones & Tablets (Online & Offline)">
                         <i data-lucide="smartphone"></i>
                         <span>Connect Mobile</span>
                     </button>
@@ -246,13 +246,13 @@
         </div>
     </div>
 
-    <!-- Offline Mobile & Tablet QR Access Modal -->
+    <!-- Device Connection & QR Modal (Public Internet & Offline) -->
     <div id="offline-qr-modal" class="modal-overlay hidden">
         <div class="modal-card offline-modal-card">
             <div class="modal-header">
                 <div style="display:flex; align-items:center; gap:8px;">
-                    <i data-lucide="wifi-off" style="color:var(--success); width:20px; height:20px;"></i>
-                    <h3 style="margin:0; font-size:1.15rem;">Connect Any Device (100% Offline)</h3>
+                    <i data-lucide="globe" style="color:var(--primary); width:20px; height:20px;"></i>
+                    <h3 style="margin:0; font-size:1.15rem;">Connect Any Device to EvacuMate</h3>
                 </div>
                 <button class="btn-close-modal" onclick="closeOfflineQrModal()" aria-label="Close modal">
                     <i data-lucide="x"></i>
@@ -260,48 +260,70 @@
             </div>
             <div class="modal-body" style="padding: 1.25rem 1rem;">
                 <p style="font-size:0.88rem; color:var(--text-muted); margin-top:0;">
-                    Any smartphone, tablet, or laptop connected to the same Wi-Fi or Mobile Hotspot can open EvacuMate with <strong>zero internet required</strong>.
+                    Access EvacuMate from any smartphone, tablet, or PC across <strong>different Wi-Fi networks</strong> or <strong>mobile cellular data (4G/5G)</strong>.
                 </p>
 
-                <!-- Permanent Link Card -->
-                <div class="offline-link-box">
-                    <div class="link-label"><i data-lucide="shield-check"></i> Permanent Offline Link (Never Changes)</div>
-                    <div class="link-value-row">
-                        <span id="qr-permanent-url" class="link-value">http://evacumate.local:8550</span>
-                        <button onclick="copyUrlFromElem('qr-permanent-url')" class="btn-copy-small" title="Copy Link">
-                            <i data-lucide="copy"></i>
-                        </button>
-                    </div>
-                    <div class="link-hint">Compatible with iPhone, iPad, Android 12+, Windows, Mac &amp; Chrome.</div>
+                <!-- Navigation Tabs -->
+                <div style="display:flex; gap:6px; margin-bottom:12px; border-bottom:1px solid var(--border-light); padding-bottom:8px;">
+                    <button class="btn-chip-toggle active" id="btn-qr-public" onclick="switchQrCode('public')">
+                        <i data-lucide="globe" style="width:13px; height:13px;"></i> Public Internet
+                    </button>
+                    <button class="btn-chip-toggle" id="btn-qr-mdns" onclick="switchQrCode('mdns')">
+                        <i data-lucide="shield-check" style="width:13px; height:13px;"></i> Offline Link
+                    </button>
+                    <button class="btn-chip-toggle" id="btn-qr-ip" onclick="switchQrCode('ip')">
+                        <i data-lucide="wifi" style="width:13px; height:13px;"></i> Direct IP
+                    </button>
                 </div>
 
-                <!-- Fallback IP Card -->
-                <div class="offline-link-box" style="margin-top: 10px;">
-                    <div class="link-label"><i data-lucide="wifi"></i> Direct Wi-Fi Link (Older Androids)</div>
+                <!-- Box 1: Public Internet (Different Wi-Fi / 4G / 5G) -->
+                <div id="box-qr-public" class="offline-link-box">
+                    <div class="link-label" style="color:var(--primary);"><i data-lucide="globe"></i> Public Online URL (Any Wi-Fi / Cellular Data)</div>
                     <div class="link-value-row">
-                        <span id="qr-ip-url" class="link-value">Loading IP...</span>
-                        <button onclick="copyUrlFromElem('qr-ip-url')" class="btn-copy-small" title="Copy Link">
+                        <span id="qr-public-url" class="link-value" style="font-weight:700; color:var(--primary);">Loading Public URL...</span>
+                        <button onclick="copyUrlFromElem('qr-public-url')" class="btn-copy-small" title="Copy Public URL">
                             <i data-lucide="copy"></i>
                         </button>
                     </div>
+                    <div class="link-hint">✅ Works on different Wi-Fi networks, mobile data (Smart/Globe/DITO/4G/5G), and any device globally!</div>
+                </div>
+
+                <!-- Box 2: Permanent Offline (Same Wi-Fi) -->
+                <div id="box-qr-mdns" class="offline-link-box hidden">
+                    <div class="link-label"><i data-lucide="shield-check"></i> Permanent Offline Link (Same Wi-Fi)</div>
+                    <div class="link-value-row">
+                        <span id="qr-permanent-url" class="link-value">http://evacumate.local:8550</span>
+                        <button onclick="copyUrlFromElem('qr-permanent-url')" class="btn-copy-small" title="Copy Offline Link">
+                            <i data-lucide="copy"></i>
+                        </button>
+                    </div>
+                    <div class="link-hint">Disaster mode: Zero internet needed when connected to host laptop's Wi-Fi or hotspot.</div>
+                </div>
+
+                <!-- Box 3: Fallback Direct IP -->
+                <div id="box-qr-ip" class="offline-link-box hidden">
+                    <div class="link-label"><i data-lucide="wifi"></i> Direct Wi-Fi IP Link</div>
+                    <div class="link-value-row">
+                        <span id="qr-ip-url" class="link-value">Loading IP...</span>
+                        <button onclick="copyUrlFromElem('qr-ip-url')" class="btn-copy-small" title="Copy IP Link">
+                            <i data-lucide="copy"></i>
+                        </button>
+                    </div>
+                    <div class="link-hint">Use if older Android devices cannot resolve hostname URLs.</div>
                 </div>
 
                 <!-- Live QR Code Section -->
                 <div style="margin: 1.25rem 0 0.5rem; display: flex; flex-direction: column; align-items: center;">
                     <div id="qr-code-image-container" class="qr-code-box">
-                        <img id="qr-code-img" src="/api/qr-code?target=mdns" alt="Scan to connect" style="width: 175px; height: 175px; display: block;" />
+                        <img id="qr-code-img" src="/api/qr-code?target=public" alt="Scan to connect" style="width: 175px; height: 175px; display: block;" />
                     </div>
-                    <div style="display:flex; gap:8px; margin-top:10px;">
-                        <button class="btn-chip-toggle active" id="btn-qr-mdns" onclick="switchQrCode('mdns')">evacumate.local</button>
-                        <button class="btn-chip-toggle" id="btn-qr-ip" onclick="switchQrCode('ip')">Direct IP</button>
-                    </div>
-                    <span style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">Scan with your phone camera or QR scanner</span>
+                    <span style="font-size:0.8rem; color:var(--text-muted); margin-top:8px;">Scan with your phone's camera to open immediately</span>
                 </div>
 
-                <!-- PWA Offline Install Info -->
+                <!-- Mobile PWA Install Info -->
                 <div class="offline-pwa-info">
-                    <strong>💡 Install as Offline App on Phone:</strong><br>
-                    Open the link in Chrome or Safari, tap the browser menu (⋮ or Share), then tap <strong>"Add to Home Screen"</strong> / <strong>"Install App"</strong>. EvacuMate will run like a native mobile app!
+                    <strong>💡 Install as Mobile App:</strong><br>
+                    Open the link on your phone in Chrome or Safari, tap menu (⋮ or Share), then tap <strong>"Add to Home Screen"</strong> / <strong>"Install App"</strong>.
                 </div>
             </div>
         </div>
