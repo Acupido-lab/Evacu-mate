@@ -88,31 +88,105 @@ function copyPublicUrl(url) {
     }
 }
 
+// ==========================================
+// PWA & SERVICE WORKER REGISTRATION (100% OFFLINE)
+// ==========================================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/sw.js').then(() => {
+            console.log('EvacuMate Offline Service Worker active');
+        }).catch((err) => {
+            console.log('ServiceWorker note:', err);
+        });
+    });
+}
+
+let currentServerData = null;
+
+function openOfflineQrModal() {
+    const modal = document.getElementById('offline-qr-modal');
+    if (modal) modal.classList.remove('hidden');
+    if (currentServerData) {
+        const permEl = document.getElementById('qr-permanent-url');
+        const ipEl = document.getElementById('qr-ip-url');
+        if (permEl) permEl.textContent = currentServerData.offline_permanent_url || 'http://evacumate.local:8550';
+        if (ipEl) ipEl.textContent = currentServerData.network_ip_url || `http://${currentServerData.ip}:8550`;
+    }
+    switchQrCode('mdns');
+    if (window.lucide) lucide.createIcons();
+}
+
+function closeOfflineQrModal() {
+    const modal = document.getElementById('offline-qr-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function switchQrCode(type) {
+    const btnMdns = document.getElementById('btn-qr-mdns');
+    const btnIp = document.getElementById('btn-qr-ip');
+    const img = document.getElementById('qr-code-img');
+    if (!img) return;
+
+    if (type === 'ip') {
+        if (btnIp) btnIp.classList.add('active');
+        if (btnMdns) btnMdns.classList.remove('active');
+        img.src = '/api/qr-code?target=ip&t=' + Date.now();
+    } else {
+        if (btnMdns) btnMdns.classList.add('active');
+        if (btnIp) btnIp.classList.remove('active');
+        img.src = '/api/qr-code?target=mdns&t=' + Date.now();
+    }
+}
+
+function copyUrlFromElem(elemId) {
+    const el = document.getElementById(elemId);
+    if (el) {
+        copyPublicUrl(el.textContent.trim());
+    }
+}
+
 async function fetchServerInfo() {
     try {
         const res = await fetch('/api/server-info');
         const data = await res.json();
+        currentServerData = data;
         const container = document.getElementById('web-access-ip');
+        const offlineUrl = data.offline_permanent_url || 'http://evacumate.local:8550';
+        
         if (data.public_url) {
             container.innerHTML = `
                 <div style="display:flex; flex-direction:column; gap:3px; width:100%; text-align:center;">
                     <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
                         <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#10b981; box-shadow:0 0 6px #10b981;"></span>
-                        <a href="${data.public_url}" target="_blank" style="color:var(--primary); text-decoration:none; font-weight:700; font-size:11px;" title="Open permanent public URL">
+                        <a href="${data.public_url}" target="_blank" style="color:var(--primary); text-decoration:none; font-weight:700; font-size:11px;" title="Permanent Public Gateway">
                             ${data.public_url.replace('https://', '')}
                         </a>
-                        <button onclick="copyPublicUrl('${data.public_url}')" title="Copy Permanent Link" style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:2px; display:inline-flex; align-items:center;">
+                        <button onclick="copyPublicUrl('${data.public_url}')" title="Copy Public URL" style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:2px; display:inline-flex; align-items:center;">
                             <i data-lucide="copy" style="width:12px; height:12px;"></i>
                         </button>
                     </div>
-                    <div style="font-size:10px; color:var(--text-muted);">Local: http://${data.ip}:8550</div>
+                    <div style="font-size:10px; color:var(--text-muted);">Offline: <a href="${offlineUrl}" target="_blank" style="color:inherit; text-decoration:underline;">${offlineUrl}</a></div>
                 </div>
             `;
-            if (window.lucide) lucide.createIcons();
         } else {
-            container.innerHTML = `<i data-lucide="wifi"></i> Web Access: http://${data.ip}:8550`;
-            if (window.lucide) lucide.createIcons();
+            container.innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:2px; width:100%; text-align:center;">
+                    <div style="display:flex; align-items:center; justify-content:center; gap:5px;">
+                        <i data-lucide="shield-check" style="width:13px; height:13px; color:var(--success);"></i>
+                        <a href="${offlineUrl}" target="_blank" style="color:var(--text-main); font-weight:700; font-size:11px; text-decoration:none;">
+                            ${offlineUrl}
+                        </a>
+                        <button onclick="copyPublicUrl('${offlineUrl}')" title="Copy Offline Link" style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:2px; display:inline-flex; align-items:center;">
+                            <i data-lucide="copy" style="width:12px; height:12px;"></i>
+                        </button>
+                    </div>
+                    <div style="font-size:10px; color:var(--text-muted); cursor:pointer;" onclick="openOfflineQrModal()" title="Click to view QR Code">
+                        Wi-Fi IP: http://${data.ip}:${data.port || 8550} 📱
+                    </div>
+                </div>
+            `;
         }
+        if (window.lucide) lucide.createIcons();
     } catch (e) {
         document.getElementById('web-access-ip').textContent = `Web Access: Localhost`;
     }

@@ -1639,3 +1639,144 @@ button, input, select, textarea {
     from { opacity: 1; }
     to { opacity: 0; }
 }
+
+/* ==========================================
+   OFFLINE MOBILE ACCESS & QR MODAL
+   ========================================== */
+.btn-connect-mobile {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    font-size: 0.82rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-connect-mobile:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.btn-connect-mobile i {
+    width: 15px;
+    height: 15px;
+}
+
+.offline-modal-card {
+    max-width: 480px;
+}
+
+.offline-link-box {
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    text-align: left;
+}
+
+.offline-link-box .link-label {
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+
+.offline-link-box .link-label i {
+    width: 14px;
+    height: 14px;
+}
+
+.offline-link-box .link-value-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.offline-link-box .link-value {
+    font-family: 'Consolas', monospace;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-main);
+    word-break: break-all;
+}
+
+.offline-link-box .link-hint {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.btn-copy-small {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 6px;
+    padding: 4px 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.btn-copy-small:hover {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+}
+
+.btn-copy-small i {
+    width: 13px;
+    height: 13px;
+}
+
+.qr-code-box {
+    background: #ffffff;
+    padding: 12px;
+    border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    display: inline-block;
+}
+
+.btn-chip-toggle {
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-chip-toggle.active {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+}
+
+.offline-pwa-info {
+    background: rgba(37, 99, 235, 0.06);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 12px;
+    font-size: 0.8rem;
+    text-align: left;
+    color: var(--text-main);
+    line-height: 1.45;
+}

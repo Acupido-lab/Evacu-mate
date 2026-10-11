@@ -72,6 +72,13 @@ def get_public_gateway_url():
 
     return None
 
+# Initialize offline mDNS broadcaster & Port 80 redirector
+try:
+    import offline_broadcaster
+    offline_broadcaster.init_offline_broadcaster(target_port=8550)
+except Exception as e:
+    print("Offline broadcaster init note:", e)
+
 # Serve Frontend
 @app.route('/')
 def index():
@@ -83,10 +90,41 @@ def index():
 
 @app.route('/api/server-info', methods=['GET'])
 def server_info():
+    port = int(os.environ.get('PORT', 8550))
+    local_ip = get_local_ip()
     return jsonify({
-        "ip": get_local_ip(),
+        "ip": local_ip,
+        "port": port,
+        "offline_permanent_url": f"http://evacumate.local:{port}",
+        "network_ip_url": f"http://{local_ip}:{port}",
         "public_url": get_public_gateway_url()
     })
+
+@app.route('/api/qr-code', methods=['GET'])
+def get_qr_code():
+    port = int(os.environ.get('PORT', 8550))
+    target = request.args.get('target', 'mdns')
+    local_ip = get_local_ip()
+    
+    if target == 'ip':
+        url = f"http://{local_ip}:{port}"
+    elif target == 'public':
+        url = get_public_gateway_url() or f"http://evacumate.local:{port}"
+    else:
+        url = f"http://evacumate.local:{port}"
+
+    try:
+        import qrcode
+        import qrcode.image.svg
+        import io
+        from flask import Response
+        factory = qrcode.image.svg.SvgImage
+        img = qrcode.make(url, image_factory=factory)
+        buf = io.BytesIO()
+        img.save(buf)
+        return Response(buf.getvalue(), mimetype='image/svg+xml')
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
@@ -443,9 +481,15 @@ if __name__ == '__main__':
     debug = os.environ.get('FLASK_DEBUG', 'False').lower() in ('true', '1', 't')
     
     local_ip = get_local_ip()
-    print(f"Starting EvacuMate Relief & Shelter Helper...")
-    print(f"Local Access: http://127.0.0.1:{port}")
-    print(f"Network Access: http://{local_ip}:{port}")
+    print("=" * 66)
+    print("    EvacuMate Relief & Shelter Helper (Offline & Local Server)    ")
+    print("=" * 66)
+    print(f"  PERMANENT OFFLINE LINK (All Devices) : http://evacumate.local:{port}")
+    print(f"  Direct Wi-Fi / Hotspot Fallback      : http://{local_ip}:{port}")
+    print(f"  Local Host Computer                  : http://127.0.0.1:{port}")
+    if port == 8550:
+        print(f"  Standard Browser Link (Port 80)      : http://evacumate.local")
+    print("=" * 66)
     
     # Auto-open browser window on startup (for local / EXE execution)
     if os.environ.get('PORT') is None and os.environ.get('NO_BROWSER') is None:

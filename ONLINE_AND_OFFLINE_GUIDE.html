@@ -104,22 +104,27 @@
         <p>This guide explains how to access and run <strong>EvacuMate</strong> in both <strong>Offline</strong> and <strong>Online</strong> environments.</p>
 
         <h2>1. 📴 Offline Access (No Internet Required)</h2>
-        <h3>Mode A: Local Computer (Single User / Admin)</h3>
-        <p>1. Double-click the <strong>EvacuMate App</strong> shortcut on your Desktop.</p>
-        <p>2. The application will start and open automatically at: <br>
-           <code>http://127.0.0.1:8550</code> or <code>http://localhost:8550</code></p>
-        <a href="http://127.0.0.1:8550" class="btn" target="_blank">Open EvacuMate Local Server</a>
-
-        <h3>Mode B: Local Wi-Fi / LAN Network (Shelter / Multi-Device)</h3>
-        <p>Connect multiple phones, tablets, or laptops in your shelter or office without internet!</p>
-        <div class="card-box">
-            <strong>How to connect other devices on the same Wi-Fi:</strong>
-            <ol>
-                <li>Start EvacuMate on your host computer.</li>
-                <li>Note your Network IP shown in the terminal (e.g., <code>http://192.168.1.15:8550</code>).</li>
-                <li>On any phone or laptop on the same Wi-Fi, open the browser and navigate to <code>http://&lt;YOUR-LOCAL-IP&gt;:8550</code>.</li>
-            </ol>
+        <h3>🌟 Permanent Offline Link (Never Changes on Any Device)</h3>
+        <p>No more searching for changing IP addresses. EvacuMate broadcasts its own permanent local domain across your shelter's Wi-Fi router or phone mobile hotspot:</p>
+        <div class="card-box" style="background:#eff6ff; border-left:4px solid var(--primary);">
+            <div style="font-size:1.15rem; font-weight:700; color:var(--primary); font-family:Consolas, monospace;">http://evacumate.local:8550</div>
+            <p style="margin:6px 0 0; font-size:0.9rem; color:var(--muted);">
+                Also accessible as <code>http://evacumate.local</code> (via Port 80 auto-redirection).
+            </p>
         </div>
+        <p><strong>Device Compatibility:</strong></p>
+        <ul>
+            <li><strong>iPhone &amp; iPad:</strong> Native mDNS support in Safari and Chrome.</li>
+            <li><strong>Android (12, 13, 14, 15+):</strong> Native mDNS resolution in Google Chrome.</li>
+            <li><strong>Windows &amp; Mac:</strong> Works out of the box in Chrome, Edge, and Safari.</li>
+            <li><strong>Host Computer:</strong> <code>http://evacumate.local:8550</code> or <code>http://127.0.0.1:8550</code>.</li>
+        </ul>
+
+        <h3>📱 Instant Mobile Camera QR Code</h3>
+        <p>On your laptop, click the <strong>📱 Connect Mobile</strong> button in the top navigation bar. Any volunteer can point their phone camera at the screen to open EvacuMate immediately—zero typing!</p>
+
+        <h3>📲 Install as an App on Phones &amp; Tablets (PWA)</h3>
+        <p>When opened in Chrome on Android or Safari on iOS, tap the browser menu (⋮ or Share) and select <strong>"Add to Home Screen"</strong> / <strong>"Install App"</strong>. EvacuMate will run full-screen like a native mobile app with complete offline caching!</p>
 
         <h2>2. 🌐 Permanent Public Online Runtime Gateway (Fixed Public URL)</h2>
         <p>Give EvacuMate a single fixed public URL that <strong>never changes, never expires, and auto-reconnects on Windows boot</strong>.</p>

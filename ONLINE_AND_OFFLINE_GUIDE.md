@@ -6,21 +6,31 @@ Welcome to **EvacuMate (Relief & Shelter Helper)**! This guide explains how to r
 
 ## 1. 📴 Offline Access (No Internet Required)
 
-### Mode A: Local Computer (Single User / Admin)
-1. **Desktop Shortcut**: Double-click the **EvacuMate App** shortcut on your Desktop.
-2. Alternatively, run `run.bat` inside the project folder.
-3. The server will start automatically and open your default web browser at:
-   - `http://127.0.0.1:8550` or `http://localhost:8550`
+### 🌟 Permanent Offline Link (Never Changes on Any Device)
+No more asking "what is the IP address today?". EvacuMate broadcasts its own permanent local domain across your Wi-Fi or phone hotspot:
+- **Permanent URL**: `http://evacumate.local:8550` (or simply `http://evacumate.local`)
+- **Device Compatibility**:
+  - **iPhones & iPads**: Works natively in Safari and Chrome.
+  - **Android Devices (12+)**: Works natively in Google Chrome.
+  - **Windows & Mac**: Works in Chrome, Edge, and Safari.
+  - **Host Computer**: `http://evacumate.local:8550` or `http://127.0.0.1:8550`.
 
-### Mode B: Local Wi-Fi / LAN Network (Multi-Device in Shelter/Office)
-Multiple smartphones, tablets, or laptops in the same building/shelter can connect to EvacuMate without needing internet!
-1. Start EvacuMate on the host computer.
-2. Look at the Command Prompt window to find your **Network Access IP** (e.g., `http://192.168.1.15:8550`).
-3. On any mobile phone, tablet, or laptop connected to the **same Wi-Fi router**:
-   - Open Chrome, Safari, or Edge.
-   - Enter `http://<YOUR_LOCAL_IP>:8550` (e.g. `http://192.168.1.15:8550`).
+### 📱 Instant Mobile Camera QR Code
+1. Start EvacuMate on your laptop.
+2. In the top-right header, click **📱 Connect Mobile**.
+3. A large QR code appears on screen.
+4. Point any phone or tablet camera at the screen to open EvacuMate immediately in Chrome—zero typing needed!
 
-> 💡 **Tip**: Make sure Windows Firewall allows port `8550` if other devices have trouble connecting.
+### 📲 Install as a Mobile App (PWA)
+Once opened in Chrome on Android or Safari on iOS:
+1. Tap the browser menu (⋮ or Share icon).
+2. Tap **"Add to Home Screen"** or **"Install App"**.
+3. EvacuMate now appears with an app icon on your home screen and operates with full offline caching!
+
+### Direct Wi-Fi IP (Fallback for Older Androids)
+If you have an older smartphone (Android 11 or older) that lacks mDNS support:
+1. Look at the terminal window or the "Connect Mobile" modal to find your Wi-Fi IP (e.g. `http://192.168.18.192:8550`).
+2. Type that into Chrome or scan the "Direct IP" QR code toggle.
 
 ---
 
