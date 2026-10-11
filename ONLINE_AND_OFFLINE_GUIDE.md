@@ -24,30 +24,54 @@ Multiple smartphones, tablets, or laptops in the same building/shelter can conne
 
 ---
 
-## 2. 🌐 Online Access (Public Internet Access)
+## 2. 🌐 Permanent Public Online Runtime Gateway (Fixed Public URL)
 
-### Option A: Free 24/7 Cloud Hosting on Render.com (Recommended)
-You can deploy EvacuMate to the web for free so anyone can access it anywhere in the world:
+To give EvacuMate a single fixed public URL that **never changes, never expires, and auto-reconnects on boot**:
 
-1. **Push to GitHub**:
-   - Upload your project repository to GitHub.
-2. **Deploy on Render**:
-   - Go to [render.com](https://render.com) and create a free account.
-   - Click **New +** -> **Web Service**.
-   - Connect your GitHub repository.
-   - Render will automatically detect `render.yaml` or use:
-     - **Build Command**: `pip install -r requirements.txt`
-     - **Start Command**: `gunicorn wsgi:app`
-3. **Done!** Render will give you a public URL like `https://evacumate-relief-helper.onrender.com`.
+### The 6 Golden Gateway Rules
+1. **Bind to ONE Permanent Reserved Domain Only**: No random subdomains.
+2. **Identical URL Across Restarts/Reboots**: Always binds to your reserved static domain.
+3. **No Temporary Links**: Zero random URLs that break client bookmarks or gadgets.
+4. **Auto-Reconnect on Windows Boot**: Background service automatically starts on PC startup.
+5. **Full Global Internet Accessibility**: Reachable worldwide from any phone, tablet, or laptop.
+6. **HTTPS Enabled by Default**: Secured with TLS certificates out of the box.
 
-### Option B: Quick Instant Web Tunneling (ngrok / Cloudflare Tunnel)
-If you want to temporarily share your running local server to someone over the internet:
-1. Download [ngrok](https://ngrok.com) or `cloudflared`.
-2. Run command:
-   ```cmd
-   ngrok http 8550
-   ```
-3. Copy the generated `https://xxxx.ngrok-free.app` URL and send it to your team!
+---
+
+### Setup Instructions (3 Easy Minutes)
+
+#### Step 1: Claim your 100% Free Lifetime Static Domain
+1. Log in or create a free account at [dashboard.ngrok.com](https://dashboard.ngrok.com).
+2. Go to **Cloud Edge** -> **Domains** (or [dashboard.ngrok.com/domains](https://dashboard.ngrok.com/domains)).
+3. Click **+ New Domain** to claim your free static domain (e.g. `mysite.ngrok-free.website` or `yourname.ngrok-free.app`).
+4. Go to **Get Started** -> **Your Authtoken** (or [dashboard.ngrok.com/get-started/your-authtoken](https://dashboard.ngrok.com/get-started/your-authtoken)) and copy your authtoken.
+
+#### Step 2: Configure the Gateway
+- Open `gateway_config.json` in the project folder (or run `configure_gateway.bat`):
+  ```json
+  {
+    "permanent_domain": "your-reserved-domain.ngrok-free.app",
+    "authtoken": "YOUR_NGROK_AUTHTOKEN_HERE",
+    "port": 8550,
+    "auto_reconnect": true
+  }
+  ```
+
+#### Step 3: Enable Auto-Reconnect on Windows Boot
+- Run `configure_gateway.bat` and press **[4]** (or right-click `install_boot_startup.ps1` and select *Run with PowerShell*).
+- This registers the gateway to run silently in the background whenever Windows boots or logs in!
+
+#### Step 4: Run or Test
+- **Interactive Mode**: Double-click `run_gateway.bat` or `EvacuMate Permanent Gateway` on your Desktop.
+- **Silent Background Mode**: Run `wscript run_gateway_silent.vbs`.
+
+---
+
+### Option B: 24/7 Cloud Hosting on Render.com (Serverless Cloud)
+If you need 24/7 online availability even when your host PC is turned completely off:
+1. Push your repository to GitHub (`https://github.com/Acupido-lab/Evacu-mate.git`).
+2. Log in to [render.com](https://render.com) and create a **Web Service** connected to your repo.
+3. Render automatically picks up `render.yaml` and gives you a 24/7 public URL like `https://evacumate-relief-helper.onrender.com`.
 
 ---
 

@@ -10,8 +10,20 @@ let currentUser = {
 let activeView = 'dashboard';
 let currentEditId = null;
 let currentFamilies = [];
+let currentEvacuees = [];
 let currentRooms = [];
 let currentInventory = [];
+let currentUsers = [];
+
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
 
 // ==========================================
 // APP INITIALIZATION
@@ -64,11 +76,43 @@ function updateDateDisplay() {
     document.getElementById('display-date').textContent = new Date().toLocaleDateString('en-US', options);
 }
 
+function copyPublicUrl(url) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(() => {
+            showAlert('Permanent Public Gateway URL copied to clipboard!', true);
+        }).catch(() => {
+            prompt('Copy Permanent URL:', url);
+        });
+    } else {
+        prompt('Copy Permanent URL:', url);
+    }
+}
+
 async function fetchServerInfo() {
     try {
         const res = await fetch('/api/server-info');
         const data = await res.json();
-        document.getElementById('web-access-ip').textContent = `Web Access: http://${data.ip}:8550`;
+        const container = document.getElementById('web-access-ip');
+        if (data.public_url) {
+            container.innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:3px; width:100%; text-align:center;">
+                    <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+                        <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#10b981; box-shadow:0 0 6px #10b981;"></span>
+                        <a href="${data.public_url}" target="_blank" style="color:var(--primary); text-decoration:none; font-weight:700; font-size:11px;" title="Open permanent public URL">
+                            ${data.public_url.replace('https://', '')}
+                        </a>
+                        <button onclick="copyPublicUrl('${data.public_url}')" title="Copy Permanent Link" style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:2px; display:inline-flex; align-items:center;">
+                            <i data-lucide="copy" style="width:12px; height:12px;"></i>
+                        </button>
+                    </div>
+                    <div style="font-size:10px; color:var(--text-muted);">Local: http://${data.ip}:8550</div>
+                </div>
+            `;
+            if (window.lucide) lucide.createIcons();
+        } else {
+            container.innerHTML = `<i data-lucide="wifi"></i> Web Access: http://${data.ip}:8550`;
+            if (window.lucide) lucide.createIcons();
+        }
     } catch (e) {
         document.getElementById('web-access-ip').textContent = `Web Access: Localhost`;
     }
@@ -774,15 +818,18 @@ async function loadFamilies(search = '') {
         
         if (families.length > 0) {
             families.forEach(f => {
+                const famName = escapeHtml(f.family_name);
+                const contact = escapeHtml(f.contact_number) || 'N/A';
+                const addr = escapeHtml(f.address) || 'N/A';
                 body.innerHTML += `
                     <tr>
                         <td><span class="text-muted">#${f.family_id}</span></td>
-                        <td><strong>${f.family_name}</strong></td>
-                        <td>${f.contact_number || 'N/A'}</td>
-                        <td>${f.address || 'N/A'}</td>
+                        <td><strong>${famName}</strong></td>
+                        <td>${contact}</td>
+                        <td>${addr}</td>
                         <td>
                             <div style="display: flex; gap: 5px;">
-                                <button class="btn-icon-only" onclick="openEditFamilyModal(${f.family_id}, '${f.family_name}', '${f.contact_number || ''}', '${f.address || ''}')" title="Edit">
+                                <button class="btn-icon-only" onclick="openEditFamilyModal(${f.family_id})" title="Edit">
                                     <i data-lucide="edit-3" style="width: 16px; height: 16px; color: var(--text-secondary);"></i>
                                 </button>
                                 <button class="btn-icon-only text-danger" onclick="deleteFamily(${f.family_id})" title="Delete">
@@ -835,8 +882,13 @@ async function saveFamily(e) {
     }
 }
 
-function openEditFamilyModal(id, name, contact, address) {
+function openEditFamilyModal(id) {
+    const f = currentFamilies.find(item => item.family_id === id);
+    if (!f) return;
     currentEditId = id;
+    const name = escapeHtml(f.family_name);
+    const contact = escapeHtml(f.contact_number || '');
+    const address = escapeHtml(f.address || '');
     const formHTML = `
         <form onsubmit="updateFamily(event)" class="auth-form">
             <div class="form-group">
@@ -910,34 +962,37 @@ async function loadEvacuees(search = '') {
     try {
         const res = await fetch(`/api/evacuees?search=${encodeURIComponent(search)}`);
         const evacuees = await res.json();
+        currentEvacuees = evacuees; // cache it
         
         const body = document.getElementById('evacuees-table-body');
         body.innerHTML = '';
         
         if (evacuees.length > 0) {
             evacuees.forEach(e => {
+                const fullname = escapeHtml(e.fullname);
+                const famName = escapeHtml(e.family_name);
                 const genderClass = e.gender === 'Male' ? 'badge-info' : e.gender === 'Female' ? 'badge-success' : 'badge-warning';
                 
                 const medVisible = e.medical_condition && e.medical_condition.toLowerCase() !== 'none' && e.medical_condition.trim() !== '';
                 const medCell = medVisible 
-                    ? `<span class="badge badge-danger">${e.medical_condition}</span>` 
+                    ? `<span class="badge badge-danger">${escapeHtml(e.medical_condition)}</span>` 
                     : `<span class="text-muted">None</span>`;
                     
                 const roomCell = e.room_name 
-                    ? `<span class="badge badge-info">${e.room_name}</span>` 
+                    ? `<span class="badge badge-info">${escapeHtml(e.room_name)}</span>` 
                     : `<span class="badge badge-warning">Unassigned</span>`;
                 
                 body.innerHTML += `
                     <tr>
-                        <td><strong>${e.fullname}</strong></td>
-                        <td>${e.age}</td>
+                        <td><strong>${fullname}</strong></td>
+                        <td>${e.age !== null && e.age !== undefined ? e.age : 'N/A'}</td>
                         <td><span class="badge ${genderClass}">${e.gender}</span></td>
-                        <td>${e.family_name}</td>
+                        <td>${famName}</td>
                         <td>${medCell}</td>
                         <td>${roomCell}</td>
                         <td>
                             <div style="display: flex; gap: 5px;">
-                                <button class="btn-icon-only" onclick="openEditEvacueeModal(${e.evacuee_id}, '${e.fullname}', ${e.age}, '${e.gender}', '${e.medical_condition || ''}', ${e.family_id}, ${e.room_id || null})" title="Edit">
+                                <button class="btn-icon-only" onclick="openEditEvacueeModal(${e.evacuee_id})" title="Edit">
                                     <i data-lucide="edit-3" style="width: 16px; height: 16px; color: var(--text-secondary);"></i>
                                 </button>
                                 <button class="btn-icon-only text-danger" onclick="deleteEvacuee(${e.evacuee_id})" title="Delete">
@@ -969,7 +1024,7 @@ async function populateEvacueeDropdowns() {
         const famSel = document.getElementById('evac-family');
         famSel.innerHTML = '<option value="" disabled selected>-- Select Family --</option>';
         families.forEach(f => {
-            famSel.innerHTML += `<option value="${f.family_id}">${f.family_name} (#${f.family_id})</option>`;
+            famSel.innerHTML += `<option value="${f.family_id}">${escapeHtml(f.family_name)} (#${f.family_id})</option>`;
         });
 
         const roomSel = document.getElementById('evac-room');
@@ -977,7 +1032,7 @@ async function populateEvacueeDropdowns() {
         rooms.forEach(r => {
             const isFull = r.occupied >= r.capacity;
             const disabledAttr = isFull ? 'disabled' : '';
-            roomSel.innerHTML += `<option value="${r.room_id}" ${disabledAttr}>${r.room_name} (${r.occupied}/${r.capacity}${isFull ? ' - FULL' : ''})</option>`;
+            roomSel.innerHTML += `<option value="${r.room_id}" ${disabledAttr}>${escapeHtml(r.room_name)} (${r.occupied}/${r.capacity}${isFull ? ' - FULL' : ''})</option>`;
         });
     } catch (e) {
         showAlert('Error populating form dropdowns.', false);
@@ -987,7 +1042,8 @@ async function populateEvacueeDropdowns() {
 async function saveEvacuee(e) {
     e.preventDefault();
     const fullname = document.getElementById('evac-name').value.trim();
-    const age = parseInt(document.getElementById('evac-age').value);
+    const ageVal = document.getElementById('evac-age').value;
+    const age = ageVal !== '' ? parseInt(ageVal) : null;
     const gender = document.getElementById('evac-gender').value;
     const medical_condition = document.getElementById('evac-med').value.trim();
     const family_id = parseInt(document.getElementById('evac-family').value);
@@ -1024,8 +1080,17 @@ async function saveEvacuee(e) {
     }
 }
 
-async function openEditEvacueeModal(id, fullname, age, gender, med, family_id, current_room_id) {
+async function openEditEvacueeModal(id) {
+    const eObj = currentEvacuees.find(item => item.evacuee_id === id);
+    if (!eObj) return;
     currentEditId = id;
+    
+    const fullname = escapeHtml(eObj.fullname);
+    const age = eObj.age !== null && eObj.age !== undefined ? eObj.age : '';
+    const gender = eObj.gender || 'Other';
+    const med = escapeHtml(eObj.medical_condition || '');
+    const family_id = eObj.family_id;
+    const current_room_id = eObj.room_id;
     
     try {
         const famRes = await fetch('/api/families');
@@ -1037,7 +1102,7 @@ async function openEditEvacueeModal(id, fullname, age, gender, med, family_id, c
         let famOptionsHTML = '';
         families.forEach(f => {
             const selected = f.family_id === family_id ? 'selected' : '';
-            famOptionsHTML += `<option value="${f.family_id}" ${selected}>${f.family_name} (#${f.family_id})</option>`;
+            famOptionsHTML += `<option value="${f.family_id}" ${selected}>${escapeHtml(f.family_name)} (#${f.family_id})</option>`;
         });
 
         let roomOptionsHTML = '<option value="">-- No Room Assignment --</option>';
@@ -1046,7 +1111,7 @@ async function openEditEvacueeModal(id, fullname, age, gender, med, family_id, c
             const isFull = (r.occupied >= r.capacity) && !isCurrent;
             const selected = isCurrent ? 'selected' : '';
             const disabledAttr = isFull ? 'disabled' : '';
-            roomOptionsHTML += `<option value="${r.room_id}" ${selected} ${disabledAttr}>${r.room_name} (${r.occupied}/${r.capacity}${isFull ? ' - FULL' : ''})</option>`;
+            roomOptionsHTML += `<option value="${r.room_id}" ${selected} ${disabledAttr}>${escapeHtml(r.room_name)} (${r.occupied}/${r.capacity}${isFull ? ' - FULL' : ''})</option>`;
         });
 
         const formHTML = `
@@ -1058,7 +1123,7 @@ async function openEditEvacueeModal(id, fullname, age, gender, med, family_id, c
                 <div class="form-row">
                     <div class="form-group">
                         <label for="edit-evac-age">Age</label>
-                        <input type="number" id="edit-evac-age" min="0" value="${age}" required>
+                        <input type="number" id="edit-evac-age" min="0" value="${age}">
                     </div>
                     <div class="form-group">
                         <label for="edit-evac-gender">Gender</label>
@@ -1214,12 +1279,14 @@ async function loadRooms(search = '') {
     try {
         const res = await fetch(`/api/rooms?search=${encodeURIComponent(search)}`);
         const rooms = await res.json();
+        currentRooms = rooms; // cache it
         
         const body = document.getElementById('rooms-table-body');
         body.innerHTML = '';
         
         if (rooms.length > 0) {
             rooms.forEach(r => {
+                const roomName = escapeHtml(r.room_name);
                 const rate = r.capacity > 0 ? Math.round((r.occupied / r.capacity) * 100) : 0;
                 
                 // Color configuration
@@ -1240,7 +1307,7 @@ async function loadRooms(search = '') {
                 body.innerHTML += `
                     <tr>
                         <td><span class="text-muted">#${r.room_id}</span></td>
-                        <td><strong>${r.room_name}</strong></td>
+                        <td><strong>${roomName}</strong></td>
                         <td>
                             <div class="occupancy-cell">
                                 <div class="occupancy-info">
@@ -1255,7 +1322,7 @@ async function loadRooms(search = '') {
                         <td><span class="badge ${statusClass}">${statusText}</span></td>
                         <td>
                             <div style="display: flex; gap: 5px;">
-                                <button class="btn-icon-only" onclick="openEditRoomModal(${r.room_id}, '${r.room_name}', ${r.capacity})" title="Edit">
+                                <button class="btn-icon-only" onclick="openEditRoomModal(${r.room_id})" title="Edit">
                                     <i data-lucide="edit-3" style="width: 16px; height: 16px; color: var(--text-secondary);"></i>
                                 </button>
                                 <button class="btn-icon-only text-danger" onclick="deleteRoom(${r.room_id})" title="Delete">
@@ -1306,8 +1373,12 @@ async function saveRoom(e) {
     }
 }
 
-function openEditRoomModal(id, name, capacity) {
+function openEditRoomModal(id) {
+    const r = currentRooms.find(item => item.room_id === id);
+    if (!r) return;
     currentEditId = id;
+    const name = escapeHtml(r.room_name);
+    const capacity = r.capacity;
     const formHTML = `
         <form onsubmit="updateRoom(event)" class="auth-form">
             <div class="form-group">
@@ -1456,18 +1527,20 @@ async function loadInventory(search = '') {
         
         if (items.length > 0) {
             items.forEach(item => {
+                const itemName = escapeHtml(item.item_name);
+                const unit = escapeHtml(item.unit);
                 const statusText = item.quantity === 0 ? 'Out of Stock' : item.quantity <= 15 ? 'Low Stock' : 'Good Stock';
                 const statusClass = item.quantity === 0 ? 'badge-danger' : item.quantity <= 15 ? 'badge-warning' : 'badge-success';
                 
                 body.innerHTML += `
                     <tr>
                         <td><span class="text-muted">#${item.item_id}</span></td>
-                        <td><strong>${item.item_name}</strong></td>
-                        <td><span class="badge badge-info">${item.quantity} ${item.unit}</span></td>
+                        <td><strong>${itemName}</strong></td>
+                        <td><span class="badge badge-info">${item.quantity} ${unit}</span></td>
                         <td><span class="badge ${statusClass}">${statusText}</span></td>
                         <td>
                             <div style="display: flex; gap: 5px;">
-                                <button class="btn-icon-only" onclick="openEditInventoryModal(${item.item_id}, '${item.item_name}', ${item.quantity}, '${item.unit}')" title="Restock / Edit">
+                                <button class="btn-icon-only" onclick="openEditInventoryModal(${item.item_id})" title="Restock / Edit">
                                     <i data-lucide="archive-restore" style="width: 16px; height: 16px; color: var(--text-secondary);"></i>
                                 </button>
                                 <button class="btn-icon-only text-danger" onclick="deleteInventory(${item.item_id})" title="Delete">
@@ -1520,8 +1593,13 @@ async function saveInventory(e) {
     }
 }
 
-function openEditInventoryModal(id, name, quantity, unit) {
+function openEditInventoryModal(id) {
+    const item = currentInventory.find(x => x.item_id === id);
+    if (!item) return;
     currentEditId = id;
+    const name = escapeHtml(item.item_name);
+    const quantity = item.quantity;
+    const unit = escapeHtml(item.unit);
     const formHTML = `
         <form onsubmit="updateInventory(event)" class="auth-form">
             <div class="form-group">
@@ -1884,17 +1962,19 @@ async function loadOperators(search = '') {
     try {
         const res = await fetch(`/api/users?search=${encodeURIComponent(search)}`);
         const users = await res.json();
+        currentUsers = users; // cache it
         
         const body = document.getElementById('operators-table-body');
         body.innerHTML = '';
         
         if (users.length > 0) {
             users.forEach(u => {
+                const username = escapeHtml(u.username);
                 const roleClass = u.role === 'Admin' ? 'badge-danger' : 'badge-success';
                 const isSelf = currentUser.username === u.username;
                 
                 let actionBtnHTML = `
-                    <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px; border-radius: 6px;" onclick="deleteOperator(${u.user_id}, '${u.username}')">
+                    <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px; border-radius: 6px;" onclick="deleteOperator(${u.user_id})">
                         <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Delete
                     </button>
                 `;
@@ -1906,7 +1986,7 @@ async function loadOperators(search = '') {
                 body.innerHTML += `
                     <tr>
                         <td><span class="text-muted">#${u.user_id}</span></td>
-                        <td><strong>${u.username}</strong></td>
+                        <td><strong>${username}</strong></td>
                         <td><span class="badge ${roleClass}">${u.role}</span></td>
                         <td>${actionBtnHTML}</td>
                     </tr>
@@ -1936,7 +2016,7 @@ async function saveOperator(e) {
         
         const data = await res.json();
         if (res.ok) {
-            showAlert(`Operator account '${username}' created successfully.`);
+            showAlert(`Operator account '${escapeHtml(username)}' created successfully.`);
             document.getElementById('op-username').value = '';
             document.getElementById('op-password').value = '';
             loadOperators();
@@ -1948,15 +2028,17 @@ async function saveOperator(e) {
     }
 }
 
-function deleteOperator(id, username) {
+function deleteOperator(id) {
+    const u = currentUsers.find(x => x.user_id === id);
+    const username = u ? u.username : '';
     showConfirmDialog(
         "Delete Operator Account",
-        `Are you sure you want to permanently delete user account '${username}'?`,
+        `Are you sure you want to permanently delete user account '${escapeHtml(username)}'?`,
         async () => {
             try {
                 const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
                 if (res.ok) {
-                    showAlert(`Operator account '${username}' deleted successfully.`);
+                    showAlert(`Operator account '${escapeHtml(username)}' deleted successfully.`);
                     loadOperators();
                 } else {
                     showAlert('Failed to delete operator account.', false);

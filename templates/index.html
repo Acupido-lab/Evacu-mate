@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,12 +8,15 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <!-- Lucide Icons (Local Offline Support) -->
     <script src="/static/lucide.min.js"></script>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="icon" type="image/png" href="/static/app_icon.png">
 </head>
+
 <body>
     <!-- Background Decorator Elements -->
     <div class="bg-glow-sphere glow-1"></div>
@@ -33,7 +37,7 @@
                     <i data-lucide="wifi-off"></i> Offline & Local Network Ready
                 </div>
             </div>
-            
+
             <div class="auth-tabs">
                 <button id="tab-login" class="auth-tab active" onclick="switchAuthTab('login')">
                     <i data-lucide="log-in"></i> Log In
@@ -49,18 +53,20 @@
                     <label for="login-username"><i data-lucide="user"></i> Username</label>
                     <div class="input-with-icon">
                         <i data-lucide="user" class="input-icon"></i>
-                        <input type="text" id="login-username" placeholder="Enter your username" required autocomplete="username">
+                        <input type="text" id="login-username" placeholder="Enter your username" required
+                            autocomplete="username">
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="login-password"><i data-lucide="lock"></i> Password</label>
                     <div class="input-with-icon">
                         <i data-lucide="lock" class="input-icon"></i>
-                        <input type="password" id="login-password" placeholder="Enter your password" required autocomplete="current-password">
+                        <input type="password" id="login-password" placeholder="Enter your password" required
+                            autocomplete="current-password">
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block btn-lg">
-                    <i data-lucide="log-in"></i> Sign In to EvacuMate
+                    <i data-lucide="log-in"></i> Sign In
                 </button>
             </form>
 
@@ -70,14 +76,16 @@
                     <label for="reg-username"><i data-lucide="user-plus"></i> Create Username</label>
                     <div class="input-with-icon">
                         <i data-lucide="user" class="input-icon"></i>
-                        <input type="text" id="reg-username" placeholder="Choose a username" required autocomplete="new-username">
+                        <input type="text" id="reg-username" placeholder="Choose a username" required
+                            autocomplete="new-username">
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="reg-password"><i data-lucide="lock"></i> Create Password</label>
                     <div class="input-with-icon">
                         <i data-lucide="lock" class="input-icon"></i>
-                        <input type="password" id="reg-password" placeholder="Choose a password" required autocomplete="new-password">
+                        <input type="password" id="reg-password" placeholder="Choose a password" required
+                            autocomplete="new-password">
                     </div>
                 </div>
                 <div class="form-group">
@@ -135,7 +143,8 @@
                     <i data-lucide="truck"></i>
                     <span>Distributions</span>
                 </a>
-                <a href="#" class="nav-item admin-only hidden" data-view="users" id="nav-users" onclick="navigateTo('users', event)">
+                <a href="#" class="nav-item admin-only hidden" data-view="users" id="nav-users"
+                    onclick="navigateTo('users', event)">
                     <i data-lucide="shield-alert"></i>
                     <span>User Accounts</span>
                 </a>
@@ -231,5 +240,5 @@
     <!-- Scripts -->
     <script src="/static/app.js"></script>
 </body>
-</html>
 
+</html>

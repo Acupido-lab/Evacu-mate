@@ -21,9 +21,12 @@ dist/
 # Scratch space, logs & credentials
 scratch/
 *.log
+gateway.log
 *.tmp
 .env
 .env.*
+gateway_config.json
+bin/
 
 # IDEs & System files
 .vscode/

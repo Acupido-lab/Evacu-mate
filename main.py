@@ -35,6 +35,43 @@ def get_local_ip():
     except Exception:
         return "127.0.0.1"
 
+# Resolve public gateway URL if configured
+def get_public_gateway_url():
+    # 1. Check live status file from supervisor
+    status_path = os.path.join(bundle_dir, 'gateway_status.json')
+    if os.path.exists(status_path):
+        try:
+            import json
+            with open(status_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if data.get('status') == 'online' and data.get('public_url'):
+                    return data.get('public_url')
+        except Exception:
+            pass
+
+    # 2. Check gateway_config.json
+    config_path = os.path.join(bundle_dir, 'gateway_config.json')
+    if os.path.exists(config_path):
+        try:
+            import json
+            with open(config_path, 'r', encoding='utf-8') as f:
+                cfg = json.load(f)
+                domain = cfg.get('permanent_domain', '').strip()
+                if domain and 'YOUR_' not in domain.upper() and domain != 'evacumate-relief.ngrok-free.app':
+                    domain = domain.replace('http://', '').replace('https://', '').strip('/')
+                    return f"https://{domain}"
+        except Exception:
+            pass
+
+    # 3. Check environment variables
+    env_domain = os.environ.get('PERMANENT_DOMAIN') or os.environ.get('RENDER_EXTERNAL_URL') or os.environ.get('PUBLIC_URL')
+    if env_domain:
+        if not env_domain.startswith('http://') and not env_domain.startswith('https://'):
+            return f"https://{env_domain}"
+        return env_domain
+
+    return None
+
 # Serve Frontend
 @app.route('/')
 def index():
@@ -46,7 +83,10 @@ def index():
 
 @app.route('/api/server-info', methods=['GET'])
 def server_info():
-    return jsonify({"ip": get_local_ip()})
+    return jsonify({
+        "ip": get_local_ip(),
+        "public_url": get_public_gateway_url()
+    })
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
@@ -85,9 +125,8 @@ def register():
 def shutdown():
     def delay_exit():
         import time
-        import signal
         time.sleep(0.5)
-        os.kill(os.getpid(), signal.SIGINT)
+        os._exit(0)
 
     import threading
     threading.Thread(target=delay_exit).start()
@@ -179,11 +218,13 @@ def get_evacuees():
 def add_evacuee():
     data = request.json or {}
     fullname = data.get('fullname', '').strip()
-    age = data.get('age')
+    raw_age = data.get('age')
+    age = int(raw_age) if raw_age not in (None, '') else None
     gender = data.get('gender', 'Other')
     medical_condition = data.get('medical_condition', '').strip()
-    family_id = data.get('family_id')
-    room_id = data.get('room_id')
+    family_id = int(data['family_id']) if data.get('family_id') is not None else None
+    raw_room_id = data.get('room_id')
+    room_id = int(raw_room_id) if raw_room_id not in (None, '', 'null') else None
     
     if not fullname or family_id is None:
         return jsonify({"error": "Full Name and Family Association are required."}), 400
@@ -198,11 +239,13 @@ def add_evacuee():
 def update_evacuee(evacuee_id):
     data = request.json or {}
     fullname = data.get('fullname', '').strip()
-    age = data.get('age')
+    raw_age = data.get('age')
+    age = int(raw_age) if raw_age not in (None, '') else None
     gender = data.get('gender', 'Other')
     medical_condition = data.get('medical_condition', '').strip()
-    family_id = data.get('family_id')
-    room_id = data.get('room_id')
+    family_id = int(data['family_id']) if data.get('family_id') is not None else None
+    raw_room_id = data.get('room_id')
+    room_id = int(raw_room_id) if raw_room_id not in (None, '', 'null') else None
     
     if not fullname or family_id is None:
         return jsonify({"error": "Full Name and Family Association are required."}), 400

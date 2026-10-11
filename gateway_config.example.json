@@ -1,0 +1,9 @@
+{
+  "_comment": "EvacuMate Permanent Public Online Runtime Gateway Configuration",
+  "permanent_domain": "your-reserved-name.ngrok-free.app",
+  "authtoken": "YOUR_NGROK_AUTHTOKEN_HERE",
+  "port": 8550,
+  "auto_reconnect": true,
+  "reconnect_delay_seconds": 5,
+  "bind_tls": true
+}

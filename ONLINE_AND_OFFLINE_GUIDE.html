@@ -121,14 +121,38 @@
             </ol>
         </div>
 
-        <h2>2. 🌐 Online Access (Public Internet Access)</h2>
-        <h3>Free 24/7 Cloud Hosting on Render.com</h3>
-        <p>Deploy your system online so anyone can access it globally:</p>
+        <h2>2. 🌐 Permanent Public Online Runtime Gateway (Fixed Public URL)</h2>
+        <p>Give EvacuMate a single fixed public URL that <strong>never changes, never expires, and auto-reconnects on Windows boot</strong>.</p>
+        
+        <div class="card-box" style="background: #f0fdf4; border-left: 4px solid var(--success);">
+            <strong>The 6 Golden Gateway Rules:</strong>
+            <ul style="margin: 0.5rem 0 0 1.2rem; padding: 0;">
+                <li><strong>1. Single Fixed Domain:</strong> Binds to ONE permanent reserved domain only.</li>
+                <li><strong>2. Preserved Across Reboots:</strong> Identical URL across restarts, reboots, and updates.</li>
+                <li><strong>3. No Temporary Links:</strong> Zero random subdomains.</li>
+                <li><strong>4. Boot Auto-Reconnect:</strong> Automatically re-establishes the tunnel on system boot.</li>
+                <li><strong>5. Global Reach:</strong> Reachable from any gadget (iPhone, Android, tablet, PC) globally.</li>
+                <li><strong>6. HTTPS Enforced:</strong> SSL/TLS encryption enabled by default.</li>
+            </ul>
+        </div>
+
+        <h3>Quick 3-Minute Setup:</h3>
         <ol>
-            <li>Push this workspace folder to a <strong>GitHub Repository</strong>.</li>
+            <li><strong>Claim Free Lifetime Domain:</strong> Log in to <a href="https://dashboard.ngrok.com/domains" target="_blank">dashboard.ngrok.com/domains</a> and claim your 1 free permanent static domain (e.g. <code>mysite.ngrok-free.website</code> or <code>shelter.ngrok-free.app</code>).</li>
+            <li><strong>Get Your Authtoken:</strong> Copy your token from <a href="https://dashboard.ngrok.com/get-started/your-authtoken" target="_blank">ngrok Authtoken page</a>.</li>
+            <li><strong>Configure Gateway:</strong> Double-click <code>configure_gateway.bat</code> (or <strong>EvacuMate Permanent Gateway</strong> on Desktop) to save your domain and token.</li>
+            <li><strong>Enable Boot Auto-Reconnect:</strong> Press option <strong>[4]</strong> in the menu to install silent background auto-start on Windows boot!</li>
+        </ol>
+
+        <a href="configure_gateway.bat" class="btn">Configure Permanent Gateway</a>
+
+        <h3 style="margin-top: 1.5rem;">Alternative: 24/7 Cloud Hosting on Render.com</h3>
+        <p>If you want EvacuMate online even when your PC is turned off:</p>
+        <ol>
+            <li>Push this workspace folder to your GitHub Repository (<code>https://github.com/Acupido-lab/Evacu-mate.git</code>).</li>
             <li>Log into <a href="https://render.com" target="_blank">Render.com</a> and click <strong>New Web Service</strong>.</li>
-            <li>Connect your GitHub repository. (Render uses <code>render.yaml</code> & <code>Procfile</code> automatically).</li>
-            <li>Get your permanent live URL (e.g., <code>https://evacumate.onrender.com</code>).</li>
+            <li>Connect your repository (uses <code>render.yaml</code> &amp; <code>Procfile</code>).</li>
+            <li>Render provides a 24/7 permanent URL like <code>https://evacumate-relief-helper.onrender.com</code>.</li>
         </ol>
 
         <h2>3. 💾 Data & Backup</h2>

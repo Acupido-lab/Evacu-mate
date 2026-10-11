@@ -24,6 +24,15 @@ $GuideLnk.IconLocation = "shell32.dll,15"
 $GuideLnk.Save()
 Write-Host "Created Desktop Shortcut: EvacuMate Access Guide.lnk"
 
+# 3. EvacuMate Permanent Gateway Shortcut
+$GatewayLnk = $WshShell.CreateShortcut("$DesktopPath\EvacuMate Permanent Gateway.lnk")
+$GatewayLnk.TargetPath = "$ProjectDir\configure_gateway.bat"
+$GatewayLnk.WorkingDirectory = $ProjectDir
+$GatewayLnk.Description = "EvacuMate Permanent Public Online Runtime Gateway (Fixed Public URL)"
+$GatewayLnk.IconLocation = "shell32.dll,18"
+$GatewayLnk.Save()
+Write-Host "Created Desktop Shortcut: EvacuMate Permanent Gateway.lnk"
+
 # 3. Create shortcut in user profile Desktop if different from OneDrive Desktop
 $UserDesktop = "$env:USERPROFILE\Desktop"
 if ((Test-Path $UserDesktop) -and ($UserDesktop -ne $DesktopPath)) {
