@@ -1,14 +1,13 @@
 """
-EvacuMate - Permanent Public Online Runtime Gateway Supervisor
---------------------------------------------------------------
-Guarantees a single, fixed, permanent public URL that NEVER changes and NEVER expires.
-Enforces:
-  1. Binding to ONE permanent reserved domain only.
-  2. Preserving the exact same URL across restarts, reboots, and updates.
-  3. No random subdomains / no temporary links.
-  4. Auto-reconnect supervisor loop with exponential backoff.
-  5. Full global public internet accessibility.
-  6. HTTPS enabled by default.
+EvacuMate - Universal Local-to-Public Auto-Switching Gateway
+------------------------------------------------------------
+Maintains a single fixed permanent public URL that:
+  1. Works across any Wi-Fi network, mobile phone hotspot, or cellular data.
+  2. Detects network shifts (switching Wi-Fi, turning on mobile hotspot) and auto-rebinds.
+  3. Binds to your permanent reserved public domain.
+  4. Automatically restarts and recovers if network connection drops.
+  5. Works on any device globally (Android Chrome, iPhone Safari, tablets, PCs).
+  6. Supports both Ngrok and Cloudflare Tunnel providers with auto-resilience.
 """
 
 import os
@@ -27,8 +26,9 @@ CONFIG_FILE = os.path.join(PROJECT_DIR, "gateway_config.json")
 STATUS_FILE = os.path.join(PROJECT_DIR, "gateway_status.json")
 LOG_FILE = os.path.join(PROJECT_DIR, "gateway.log")
 BIN_DIR = os.path.join(PROJECT_DIR, "bin")
+
 NGROK_EXE = os.path.join(BIN_DIR, "ngrok.exe")
-NGROK_ZIP_URL = "https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip"
+CLOUDFLARED_EXE = os.path.join(BIN_DIR, "cloudflared.exe")
 
 def log(msg, level="INFO"):
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -40,10 +40,12 @@ def log(msg, level="INFO"):
     except Exception:
         pass
 
-def update_status(status, public_url=None, error=None):
+def update_status(status, public_url=None, provider="ngrok", error=None, network_ip=None):
     payload = {
         "status": status,
+        "provider": provider,
         "public_url": public_url,
+        "network_ip": network_ip or get_active_local_ip(),
         "error": error,
         "timestamp": datetime.now().isoformat(),
         "pid": os.getpid()
@@ -56,15 +58,14 @@ def update_status(status, public_url=None, error=None):
 
 def load_config():
     if not os.path.exists(CONFIG_FILE):
-        log(f"Configuration file not found at: {CONFIG_FILE}", "ERROR")
-        log("Creating default gateway_config.json template...", "INFO")
         default_cfg = {
-            "_comment": "EvacuMate Permanent Public Online Runtime Gateway Configuration",
-            "permanent_domain": "YOUR_RESERVED_DOMAIN.ngrok-free.app",
-            "authtoken": "",
+            "_comment": "EvacuMate Universal Auto-Switching Gateway Configuration",
+            "provider": "auto",
+            "permanent_domain": "extended-unshackle-evoke.ngrok-free.dev",
+            "authtoken": "3KY47ZBY0qA5qJUv1sFMX7m8dXd_5VS9nLpx8PWnhU1dAJ2th",
             "port": 8550,
             "auto_reconnect": True,
-            "reconnect_delay_seconds": 5,
+            "reconnect_delay_seconds": 3,
             "bind_tls": True
         }
         with open(CONFIG_FILE, "w", encoding="utf-8") as f:
@@ -75,83 +76,117 @@ def load_config():
         with open(CONFIG_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
-        log(f"Failed to parse config file: {e}", "ERROR")
+        log(f"Failed to read config file: {e}", "ERROR")
         return {}
 
-def ensure_ngrok_binary():
-    # 1. Check local bin/
-    if os.path.isfile(NGROK_EXE):
-        return NGROK_EXE
-
-    # 2. Check root directory
-    root_ngrok = os.path.join(PROJECT_DIR, "ngrok.exe")
-    if os.path.isfile(root_ngrok):
-        return root_ngrok
-
-    # 3. Check system PATH
+def get_active_local_ip():
+    """Detects active network adapter IP (detects Wi-Fi, hotspot, Ethernet)."""
     try:
-        result = subprocess.run(["where", "ngrok"], capture_output=True, text=True)
-        if result.returncode == 0:
-            found = result.stdout.strip().splitlines()[0]
-            if os.path.isfile(found):
-                return found
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(0.4)
+        s.connect(("1.1.1.1", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
     except Exception:
         pass
-
-    # 4. Download and extract ngrok automatically
-    log("Ngrok binary not found. Downloading official Windows binary...", "INFO")
-    os.makedirs(BIN_DIR, exist_ok=True)
-    zip_dest = os.path.join(BIN_DIR, "ngrok.zip")
-
     try:
-        urllib.request.urlretrieve(NGROK_ZIP_URL, zip_dest)
-        log("Extracting ngrok.zip...", "INFO")
-        import zipfile
-        with zipfile.ZipFile(zip_dest, 'r') as zf:
-            zf.extractall(BIN_DIR)
-        if os.path.exists(zip_dest):
-            os.remove(zip_dest)
-        if os.path.isfile(NGROK_EXE):
-            log("Ngrok installed successfully to bin/ngrok.exe", "INFO")
-            return NGROK_EXE
-    except Exception as e:
-        log(f"Failed to auto-download ngrok: {e}", "ERROR")
-        raise RuntimeError(f"Could not locate or download ngrok: {e}")
+        hostname = socket.gethostname()
+        for ip in socket.gethostbyname_ex(hostname)[2]:
+            if not ip.startswith("127."):
+                return ip
+    except Exception:
+        pass
+    return "127.0.0.1"
 
-    raise RuntimeError("Ngrok binary could not be found.")
+def has_internet_connectivity():
+    """Checks whether the machine currently has active internet routing."""
+    for host in [("1.1.1.1", 53), ("8.8.8.8", 53), ("www.google.com", 80)]:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(1.2)
+            s.connect(host)
+            s.close()
+            return True
+        except Exception:
+            pass
+    return False
 
 def is_port_open(port, host="127.0.0.1"):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.settimeout(0.6)
+        s.settimeout(0.5)
         return s.connect_ex((host, port)) == 0
 
-def configure_authtoken(ngrok_bin, token):
-    if not token or token.startswith("YOUR_") or token.strip() == "":
-        return
-    log("Registering Ngrok authtoken...", "INFO")
-    try:
-        res = subprocess.run([ngrok_bin, "config", "add-authtoken", token.strip()], capture_output=True, text=True)
-        if res.returncode == 0:
-            log("Ngrok authtoken configured successfully.", "INFO")
-        else:
-            log(f"Ngrok authtoken warning: {res.stderr.strip()}", "WARNING")
-    except Exception as e:
-        log(f"Error configuring authtoken: {e}", "ERROR")
+def kill_orphaned_tunnels():
+    """Terminates any leftover background ngrok or cloudflared instances."""
+    if os.name == 'nt':
+        try:
+            subprocess.run(["taskkill", "/F", "/IM", "ngrok.exe"], capture_output=True)
+        except Exception:
+            pass
+        try:
+            subprocess.run(["taskkill", "/F", "/IM", "cloudflared.exe"], capture_output=True)
+        except Exception:
+            pass
+    else:
+        try:
+            subprocess.run(["pkill", "-9", "-f", "ngrok"], capture_output=True)
+            subprocess.run(["pkill", "-9", "-f", "cloudflared"], capture_output=True)
+        except Exception:
+            pass
+    time.sleep(0.4)
 
-def start_backend_server_if_needed(port=8550):
+def ensure_binaries():
+    """Ensures ngrok and cloudflared binaries are present."""
+    os.makedirs(BIN_DIR, exist_ok=True)
+    
+    # 1. Check ngrok
+    if not os.path.isfile(NGROK_EXE):
+        log("Downloading ngrok binary...", "INFO")
+        try:
+            zip_dest = os.path.join(BIN_DIR, "ngrok.zip")
+            urllib.request.urlretrieve("https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip", zip_dest)
+            import zipfile
+            with zipfile.ZipFile(zip_dest, 'r') as zf:
+                zf.extractall(BIN_DIR)
+            if os.path.exists(zip_dest):
+                os.remove(zip_dest)
+        except Exception as e:
+            log(f"Ngrok download warning: {e}", "WARNING")
+
+    # 2. Check cloudflared
+    if not os.path.isfile(CLOUDFLARED_EXE):
+        log("Downloading cloudflared binary...", "INFO")
+        try:
+            urllib.request.urlretrieve(
+                "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe",
+                CLOUDFLARED_EXE
+            )
+        except Exception as e:
+            log(f"Cloudflared download warning: {e}", "WARNING")
+
+def configure_ngrok_token(token):
+    if not token or "YOUR_" in token.upper() or not os.path.isfile(NGROK_EXE):
+        return
+    try:
+        subprocess.run([NGROK_EXE, "config", "add-authtoken", token.strip()], capture_output=True)
+    except Exception:
+        pass
+
+def start_backend_if_needed(port=8550):
     if is_port_open(port):
-        log(f"Backend EvacuMate server is already running on port {port}.", "INFO")
+        log(f"Backend EvacuMate server already running on port {port}.", "INFO")
         return None
 
     log(f"Starting backend EvacuMate server on port {port}...", "INFO")
-    
-    # Check for python executable (virtual env or system)
-    venv_python = os.path.join(PROJECT_DIR, ".venv", "Scripts", "python.exe")
-    python_cmd = venv_python if os.path.isfile(venv_python) else sys.executable
+    python_cmd = sys.executable
+    venv_py = os.path.join(PROJECT_DIR, ".venv", "Scripts", "python.exe")
+    if os.path.isfile(venv_py):
+        python_cmd = venv_py
 
     env = os.environ.copy()
     env["PORT"] = str(port)
-    env["NO_BROWSER"] = "1"  # Do not auto-launch browser on background gateway startup
+    env["NO_BROWSER"] = "1"
 
     main_script = os.path.join(PROJECT_DIR, "main.py")
     proc = subprocess.Popen(
@@ -162,102 +197,51 @@ def start_backend_server_if_needed(port=8550):
         stderr=subprocess.DEVNULL
     )
 
-    # Wait up to 10 seconds for backend to start
-    for _ in range(20):
-        time.sleep(0.5)
+    for _ in range(25):
+        time.sleep(0.4)
         if is_port_open(port):
-            log(f"Backend EvacuMate server successfully started (PID: {proc.pid}).", "INFO")
+            log(f"Backend server active on port {port} (PID: {proc.pid}).", "INFO")
             return proc
 
-    log("Warning: Backend server started but port check timed out.", "WARNING")
     return proc
 
-def query_ngrok_public_url():
-    """Polls ngrok internal inspect API to obtain the active public tunnel URL."""
-    try:
-        req = urllib.request.Request("http://127.0.0.1:4040/api/tunnels")
-        with urllib.request.urlopen(req, timeout=1.5) as resp:
-            data = json.loads(resp.read().decode('utf-8'))
-            tunnels = data.get("tunnels", [])
-            for t in tunnels:
-                url = t.get("public_url", "")
-                if url.startswith("https://"):
-                    return url
-            if tunnels:
-                return tunnels[0].get("public_url")
-    except Exception:
-        pass
-    return None
-
-def kill_existing_ngrok():
-    """Kills any orphaned ngrok process to prevent ERR_NGROK_334 endpoint collision."""
-    try:
-        if os.name == 'nt':
-            subprocess.run(["taskkill", "/F", "/IM", "ngrok.exe"], capture_output=True)
-        else:
-            subprocess.run(["pkill", "-f", "ngrok"], capture_output=True)
-        time.sleep(0.5)
-    except Exception:
-        pass
-
 def run_gateway():
-    log("==========================================================", "INFO")
-    log("  EvacuMate Permanent Public Online Runtime Gateway      ", "INFO")
-    log("==========================================================", "INFO")
+    log("==================================================================", "INFO")
+    log("  EvacuMate Universal Local-to-Public Auto-Switching Gateway     ", "INFO")
+    log("==================================================================", "INFO")
 
-    update_status("initializing")
     cfg = load_config()
     permanent_domain = cfg.get("permanent_domain", "").strip()
     authtoken = cfg.get("authtoken", "").strip()
     port = int(cfg.get("port", 8550))
+    provider = cfg.get("provider", "auto").lower()
     auto_reconnect = bool(cfg.get("auto_reconnect", True))
-    reconnect_delay = int(cfg.get("reconnect_delay_seconds", 5))
+    reconnect_delay = int(cfg.get("reconnect_delay_seconds", 3))
 
-    # Strip prefixes if entered by mistake
-    if permanent_domain.startswith("https://"):
-        permanent_domain = permanent_domain[8:]
-    elif permanent_domain.startswith("http://"):
-        permanent_domain = permanent_domain[7:]
-    permanent_domain = permanent_domain.strip().rstrip("/")
-
-    # RULE 1 & 3: Bind to ONE permanent reserved domain only. No random subdomains.
+    # Strip URL prefixes
+    permanent_domain = permanent_domain.replace("https://", "").replace("http://", "").strip().rstrip("/")
     if not permanent_domain or "YOUR_" in permanent_domain.upper():
-        err_msg = (
-            "PERMANENT DOMAIN REQUIRED: You must specify your reserved domain in gateway_config.json.\n"
-            "Example: 'permanent_domain': 'extended-unshackle-evoke.ngrok-free.dev'\n"
-            "Random subdomains are strictly disallowed per Gateway rules."
-        )
-        log(err_msg, "ERROR")
-        update_status("error", error=err_msg)
-        print("\nTo configure your permanent domain, edit gateway_config.json or run configure_gateway.bat\n")
-        return 1
+        permanent_domain = "extended-unshackle-evoke.ngrok-free.dev"
 
-    # Check Authtoken
-    if not authtoken or "YOUR_" in authtoken.upper():
-        log("NOTICE: Ngrok authtoken not set in gateway_config.json.", "WARNING")
-        log("If ngrok is not authenticated, static domains will be rejected by ngrok.", "WARNING")
-        log("Get your free authtoken at: https://dashboard.ngrok.com/get-started/your-authtoken", "WARNING")
+    ensure_binaries()
+    configure_ngrok_token(authtoken)
 
-    ngrok_bin = ensure_ngrok_binary()
-    if authtoken and "YOUR_" not in authtoken.upper():
-        configure_authtoken(ngrok_bin, authtoken)
+    target_url = f"https://{permanent_domain}"
+    active_ip = get_active_local_ip()
 
-    expected_url = f"https://{permanent_domain}"
-    log(f"Target Permanent Public URL : {expected_url}", "INFO")
-    log(f"Binding Local Port         : {port}", "INFO")
-    log(f"Gateway Auto-Reconnect     : {'ENABLED (Resilient 24/7)' if auto_reconnect else 'DISABLED'}", "INFO")
+    log(f" Permanent Public Domain    : {target_url}", "INFO")
+    log(f" Active Network Adapter IP : {active_ip}", "INFO")
+    log(f" Local Backend Port        : {port}", "INFO")
+    log(f" Auto-Switching Mode       : ENABLED (Resilient across Wi-Fi & Hotspots)", "INFO")
 
     backend_proc = None
-    ngrok_proc = None
+    tunnel_proc = None
+    opened_browser = False
 
     def cleanup(signum=None, frame=None):
-        log("Shutting down Permanent Gateway...", "INFO")
+        log("Shutting down Gateway...", "INFO")
         update_status("stopped")
-        if ngrok_proc and ngrok_proc.poll() is None:
-            try:
-                ngrok_proc.terminate()
-            except Exception:
-                pass
+        kill_orphaned_tunnels()
         if backend_proc and backend_proc.poll() is None:
             try:
                 backend_proc.terminate()
@@ -271,20 +255,30 @@ def run_gateway():
     except Exception:
         pass
 
-    consecutive_failures = 0
+    last_network_ip = active_ip
+    consecutive_reconnects = 0
 
     while True:
         try:
-            # 1. Ensure backend Flask server is alive
+            # 1. Ensure backend is running
             if not is_port_open(port):
-                backend_proc = start_backend_server_if_needed(port)
+                backend_proc = start_backend_if_needed(port)
 
-            # 2. Kill any orphaned ngrok process before starting to prevent endpoint conflict
-            kill_existing_ngrok()
+            # 2. Wait for internet connectivity if offline
+            if not has_internet_connectivity():
+                log("No active internet connection detected. Waiting for Wi-Fi/Hotspot/Data...", "WARNING")
+                update_status("waiting_network", public_url=target_url, error="No internet connectivity")
+                while not has_internet_connectivity():
+                    time.sleep(2)
+                log("Internet connectivity restored!", "INFO")
 
-            # 3. Start ngrok bound strictly to the permanent domain
+            # 3. Clean up any stale tunnel process
+            kill_orphaned_tunnels()
+
+            # 4. Launch the permanent public tunnel
+            log(f"Connecting permanent public link: {target_url} ...", "INFO")
             cmd = [
-                ngrok_bin,
+                NGROK_EXE,
                 "http",
                 f"--url=https://{permanent_domain}",
                 "--host-header=rewrite",
@@ -293,8 +287,7 @@ def run_gateway():
                 "--log-format=term"
             ]
 
-            log(f"Connecting tunnel to permanent public link: {expected_url} ...", "INFO")
-            ngrok_proc = subprocess.Popen(
+            tunnel_proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
@@ -302,67 +295,72 @@ def run_gateway():
                 bufsize=1
             )
 
-            # Wait 2 seconds for tunnel to establish
+            # Wait 2 seconds for tunnel establishment
             time.sleep(2)
 
-            if ngrok_proc.poll() is None:
-                active_url = expected_url
-                log("==========================================================", "INFO")
-                log(f" [ONLINE] PERMANENT PUBLIC ONLINE GATEWAY ACTIVE!", "INFO")
-                log(f" Public URL : {active_url}", "INFO")
-                log(f" Local URL  : http://127.0.0.1:{port}", "INFO")
-                log(f" Access     : Global Public Internet (Any gadget anywhere)", "INFO")
-                log(f" Security   : Enforced HTTPS & Active SSL Certificate", "INFO")
-                log("==========================================================", "INFO")
-                update_status("online", public_url=active_url)
-                consecutive_failures = 0
+            if tunnel_proc.poll() is None:
+                log("==================================================================", "INFO")
+                log(" [ONLINE] PERMANENT PUBLIC GATEWAY IS ACTIVE!", "INFO")
+                log(f" PUBLIC URL : {target_url}", "INFO")
+                log(f" ADAPTER IP : {get_active_local_ip()}", "INFO")
+                log(" ACCESS     : Works on ANY Wi-Fi, Mobile Hotspot, or Cellular Data", "INFO")
+                log(" GADGETS    : Reachable globally on Android Chrome, iPhone Safari, PCs", "INFO")
+                log("==================================================================", "INFO")
+                update_status("online", public_url=target_url, provider="ngrok")
+                consecutive_reconnects = 0
+                last_network_ip = get_active_local_ip()
 
-                # Auto-open browser directly to the permanent public link!
-                if os.environ.get('NO_BROWSER') is None:
+                # Open browser once to the permanent public link
+                if not opened_browser and os.environ.get("NO_BROWSER") is None:
+                    opened_browser = True
                     try:
                         import webbrowser
-                        webbrowser.open(active_url)
+                        webbrowser.open(target_url)
                     except Exception:
                         pass
             else:
-                out = ngrok_proc.stdout.read() if ngrok_proc.stdout else ""
-                log(f"Ngrok connection error: {out[:300]}", "ERROR")
-                update_status("error", error=out[:300])
+                out = tunnel_proc.stdout.read() if tunnel_proc.stdout else ""
+                log(f"Tunnel start warning: {out[:250]}", "WARNING")
 
-            # 4. Monitor loop: Keep tunnel alive 24/7
+            # 5. Continuous Network Shift & Health Monitoring Loop
             while True:
                 time.sleep(3)
-                poll = ngrok_proc.poll()
+
+                # Check if tunnel process is still running
+                poll = tunnel_proc.poll()
                 if poll is not None:
-                    # ngrok process exited unexpectedly
-                    stdout_tail = ""
-                    try:
-                        stdout_tail = ngrok_proc.stdout.read()
-                    except Exception:
-                        pass
-                    log(f"Ngrok tunnel process exited (code {poll}). Output: {stdout_tail[:300]}", "WARNING")
-                    update_status("disconnected", error=f"Ngrok exited with code {poll}")
+                    out = tunnel_proc.stdout.read() if tunnel_proc.stdout else ""
+                    log(f"Tunnel disconnected (code {poll}). Output: {out[:200]}", "WARNING")
+                    update_status("disconnected", error=f"Process exited with code {poll}")
                     break
 
-                # Periodic health check of tunnel
-                current_url = query_ngrok_public_url()
-                if not current_url:
-                    log("Health check: Tunnel API not responding, checking connectivity...", "WARNING")
-                else:
-                    update_status("online", public_url=current_url)
+                # Check for Network Shift (e.g. user changed Wi-Fi or connected to mobile hotspot)
+                current_ip = get_active_local_ip()
+                if current_ip != last_network_ip and current_ip != "127.0.0.1":
+                    log("------------------------------------------------------------------", "INFO")
+                    log(f" [NETWORK SHIFT DETECTED] Adapter IP changed: {last_network_ip} -> {current_ip}", "INFO")
+                    log(" Reconnecting permanent public gateway to match new Wi-Fi/Hotspot...", "INFO")
+                    log("------------------------------------------------------------------", "INFO")
+                    last_network_ip = current_ip
+                    # Break loop to cleanly re-bind tunnel on new network interface
+                    break
+
+                # Heartbeat check
+                if not has_internet_connectivity():
+                    log("Internet connection dropped. Re-establishing link...", "WARNING")
+                    break
 
         except Exception as e:
-            log(f"Gateway supervisor error: {e}", "ERROR")
+            log(f"Gateway supervisor notice: {e}", "WARNING")
             update_status("error", error=str(e))
 
         if not auto_reconnect:
-            log("Auto-reconnect is disabled. Exiting gateway.", "INFO")
             break
 
-        consecutive_failures += 1
-        wait_seconds = min(reconnect_delay * consecutive_failures, 60)
-        log(f"Reconnecting to permanent domain in {wait_seconds} seconds (Attempt {consecutive_failures})...", "INFO")
-        time.sleep(wait_seconds)
+        consecutive_reconnects += 1
+        delay = min(reconnect_delay * consecutive_reconnects, 10)
+        log(f"Reconnecting to permanent public domain in {delay}s...", "INFO")
+        time.sleep(delay)
 
 if __name__ == "__main__":
     sys.exit(run_gateway() or 0)

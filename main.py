@@ -84,6 +84,12 @@ except Exception as e:
 def index():
     return render_template('index.html')
 
+@app.after_request
+def add_tunnel_and_cors_headers(response):
+    response.headers['ngrok-skip-browser-warning'] = 'true'
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
 # ==========================================
 # API ENDPOINTS
 # ==========================================
